@@ -226,20 +226,31 @@ class MainWindow(QMainWindow):
     def _toggle_recording(self, active: bool) -> None:
         """Start or stop TDMS recording."""
         if active:
-            settings = QSettings("OPM", "OPM-Acquisition")
-            output_dir = settings.value("export/output_dir", ".")
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filepath = Path(output_dir) / f"opm_recording_{timestamp}.tdms"
+            default_name = f"opm_recording_{timestamp}.tdms"
+
+            filepath, _ = QFileDialog.getSaveFileName(
+                self,
+                "Save Recording As",
+                default_name,
+                "TDMS Files (*.tdms)",
+            )
+
+            if not filepath:
+                # User cancelled the dialog, uncheck the button
+                self._control_panel._btn_record.setChecked(False)
+                return
 
             self._recorder.start(
-                filepath=filepath,
+                filepath=Path(filepath),
                 channel_names=self._daq_config.channel_names,
                 sample_rate=self._daq_config.sample_rate,
             )
             self._control_panel.set_status("RECORDING", "warning")
             self._statusbar.showMessage(f"Recording to: {filepath}")
         else:
-            self._recorder.stop()
+            if self._recorder.is_recording:
+                self._recorder.stop()
             self._control_panel.set_status("ACQUIRING", "success")
             self._statusbar.showMessage("Recording stopped.")
 

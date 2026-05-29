@@ -264,18 +264,6 @@ class SettingsDialog(QDialog):
         layout = QFormLayout(page)
         layout.setSpacing(10)
 
-        # Output directory
-        dir_row = QHBoxLayout()
-        self._edit_output_dir = QLineEdit(
-            self._settings.value("export/output_dir", ".")
-        )
-        dir_row.addWidget(self._edit_output_dir)
-        btn_browse = QPushButton("...")
-        btn_browse.setFixedWidth(36)
-        btn_browse.clicked.connect(self._browse_output_dir)
-        dir_row.addWidget(btn_browse)
-        layout.addRow("OUTPUT DIR:", dir_row)
-
         # Default format
         self._combo_format = QComboBox()
         self._combo_format.addItems(["TDMS", "CSV", "Excel (.xlsx)"])
@@ -339,7 +327,6 @@ class SettingsDialog(QDialog):
         s.setValue("filters/bp_order", self._spin_bp_order.value())
 
         # Export
-        s.setValue("export/output_dir", self._edit_output_dir.text())
         s.setValue("export/default_format", self._combo_format.currentText())
 
     def _save_and_accept(self) -> None:
@@ -367,15 +354,7 @@ class SettingsDialog(QDialog):
         self._spin_bp_high.setValue(50.0)
         self._spin_bp_order.setValue(4)
 
-        self._edit_output_dir.setText(".")
         self._combo_format.setCurrentText("TDMS")
-
-    def _browse_output_dir(self) -> None:
-        path = QFileDialog.getExistingDirectory(
-            self, "Select Output Directory", self._edit_output_dir.text()
-        )
-        if path:
-            self._edit_output_dir.setText(path)
 
     # ── Public getters for MainWindow ─────────────────────────────────── #
 
@@ -405,9 +384,6 @@ class SettingsDialog(QDialog):
             "bp_high": self._spin_bp_high.value(),
             "bp_order": self._spin_bp_order.value(),
         }
-
-    def get_output_dir(self) -> str:
-        return self._edit_output_dir.text()
 
     def get_default_format(self) -> str:
         return self._combo_format.currentText()
