@@ -1,4 +1,4 @@
-"""Real-time chart grid for 24-channel ECG visualisation.
+"""Real-time chart grid for 24-channel OPM visualisation.
 
 Uses ``pyqtgraph`` for high-performance waveform rendering with a
 circular buffer for each channel to keep a configurable time window
@@ -30,7 +30,7 @@ class ChartWidget(QWidget):
     """Grid of 24 real-time PlotItems (6 rows x 4 columns).
 
     Each plot shows a rolling window of the most recent *N* seconds
-    of data for one ECG channel.
+    of data for one OPM channel.
 
     Parameters
     ----------

@@ -1,6 +1,6 @@
-"""Orchestrator for the ECG signal-processing pipeline.
+"""Orchestrator for the OPM signal-processing pipeline.
 
-``EcgProcessor`` chains multiple filters and applies them in the
+``OpmProcessor`` chains multiple filters and applies them in the
 correct order to each incoming data block.  It owns the filter
 instances and exposes high-level ``process`` / ``reset`` methods.
 """
@@ -16,13 +16,13 @@ from src.processing.filters import BandpassFilter, NotchFilter
 logger = logging.getLogger(__name__)
 
 
-class EcgProcessor:
-    """Real-time ECG signal conditioning pipeline.
+class OpmProcessor:
+    """Real-time OPM signal conditioning pipeline.
 
     The processing chain is:
 
     1. **Notch filter** — removes 60 Hz power-line interference.
-    2. **Bandpass filter** — isolates the 2–50 Hz ECG band.
+    2. **Bandpass filter** — isolates the 2–50 Hz OPM band.
 
     Both filters maintain per-channel streaming state so they can be
     fed consecutive blocks without transient artefacts at the boundaries.
@@ -86,7 +86,7 @@ class EcgProcessor:
             num_channels=num_channels,
         )
         logger.info(
-            "EcgProcessor initialised: fs=%.0f Hz, %d ch, "
+            "OpmProcessor initialised: fs=%.0f Hz, %d ch, "
             "notch=%s (%.0f–%.0f Hz, order %d), "
             "bp=%s (%.0f–%.0f Hz, order %d)",
             sample_rate,
@@ -130,7 +130,7 @@ class EcgProcessor:
         """Reset all filter states (call before starting a new acquisition)."""
         self._notch.reset()
         self._bandpass.reset()
-        logger.debug("EcgProcessor filter states reset.")
+        logger.debug("OpmProcessor filter states reset.")
 
     # ── properties for UI introspection ─────────────────────────────────── #
 

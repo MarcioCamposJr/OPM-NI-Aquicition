@@ -88,7 +88,7 @@ class ControlPanel(QWidget):
         self.setFixedWidth(264)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
         self._is_recording = False
-        self._settings = QSettings("OPM", "ECG-Acquisition")
+        self._settings = QSettings("OPM", "OPM-Acquisition")
         self._setup_ui()
 
     # ── UI Construction ───────────────────────────────────────────────── #
@@ -99,7 +99,7 @@ class ControlPanel(QWidget):
         layout.setSpacing(8)
 
         # ── Header ────────────────────────────────────────────────────── #
-        title = QLabel("ECG ACQUISITION")
+        title = QLabel("OPM ACQUISITION")
         title.setObjectName("title")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)

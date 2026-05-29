@@ -1,4 +1,4 @@
-"""Settings dialog for the ECG acquisition system.
+"""Settings dialog for the OPM acquisition system.
 
 Provides a tabbed interface to configure hardware, acquisition,
 filter, and export parameters.  Settings are persisted between
@@ -33,7 +33,7 @@ from src.hardware.daq_config import DaqConfig
 # ── Constants ────────────────────────────────────────────────────────────── #
 
 _ORG = "OPM"
-_APP = "ECG-Acquisition"
+_APP = "OPM-Acquisition"
 
 
 class SettingsDialog(QDialog):
@@ -222,7 +222,7 @@ class SettingsDialog(QDialog):
         layout.addWidget(notch_group)
 
         # ── Bandpass ──────────────────────────────────────────────────── #
-        bp_group = QGroupBox("BANDPASS FILTER  (ECG BAND)")
+        bp_group = QGroupBox("BANDPASS FILTER  (OPM BAND)")
         bp_layout = QFormLayout(bp_group)
 
         self._chk_bp = QCheckBox("Enabled")
@@ -394,7 +394,7 @@ class SettingsDialog(QDialog):
         )
 
     def get_filter_settings(self) -> dict:
-        """Return filter parameters as a dict for ``EcgProcessor``."""
+        """Return filter parameters as a dict for ``OpmProcessor``."""
         return {
             "notch_enabled": self._chk_notch.isChecked(),
             "notch_low": self._spin_notch_low.value(),

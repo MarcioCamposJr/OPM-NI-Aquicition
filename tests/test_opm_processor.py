@@ -1,9 +1,9 @@
-"""Tests for the EcgProcessor pipeline."""
+"""Tests for the OpmProcessor pipeline."""
 
 import numpy as np
 import pytest
 
-from src.processing.ecg_processor import EcgProcessor
+from src.processing.opm_processor import OpmProcessor
 
 
 def _make_composite_signal(
@@ -33,7 +33,7 @@ def _power_at_freq(signal: np.ndarray, freq: float, fs: float) -> float:
     return float(fft_mag[idx])
 
 
-class TestEcgProcessor:
+class TestOpmProcessor:
     """Verify the full Notch → Bandpass pipeline."""
 
     def test_full_pipeline(self):
@@ -43,7 +43,7 @@ class TestEcgProcessor:
         sig = _make_composite_signal(fs, duration=3.0)
         data = np.tile(sig, (num_ch, 1))
 
-        proc = EcgProcessor(sample_rate=fs, num_channels=num_ch)
+        proc = OpmProcessor(sample_rate=fs, num_channels=num_ch)
         out = proc.process(data)
 
         # Skip transient (first 1000 samples).
@@ -71,8 +71,8 @@ class TestEcgProcessor:
         sig_60 = np.sin(2 * np.pi * 60.0 * np.arange(0, 2.0, 1 / fs))
         data = sig_60.reshape(1, -1)
 
-        proc_with = EcgProcessor(sample_rate=fs, num_channels=1, notch_enabled=True)
-        proc_without = EcgProcessor(sample_rate=fs, num_channels=1, notch_enabled=False)
+        proc_with = OpmProcessor(sample_rate=fs, num_channels=1, notch_enabled=True)
+        proc_without = OpmProcessor(sample_rate=fs, num_channels=1, notch_enabled=False)
 
         out_with = proc_with.process(data.copy())
         out_without = proc_without.process(data.copy())
@@ -88,7 +88,7 @@ class TestEcgProcessor:
         sig = np.sin(2 * np.pi * 120.0 * np.arange(0, 2.0, 1 / fs))
         data = sig.reshape(1, -1)
 
-        proc = EcgProcessor(
+        proc = OpmProcessor(
             sample_rate=fs, num_channels=1,
             notch_enabled=False, bandpass_enabled=False,
         )
@@ -102,7 +102,7 @@ class TestEcgProcessor:
         fs = 1000.0
         data = np.random.randn(1, 1000)
 
-        proc = EcgProcessor(sample_rate=fs, num_channels=1)
+        proc = OpmProcessor(sample_rate=fs, num_channels=1)
         out1 = proc.process(data.copy())
         proc.reset()
         out2 = proc.process(data.copy())
@@ -115,15 +115,15 @@ class TestEcgProcessor:
         """Processing in blocks should produce identical output to
         processing the full signal at once (within floating-point tolerance)."""
         fs = 1000.0
-        full_sig = np.random.randn(2, 5000) * 0.001  # small amplitude ECG-like
+        full_sig = np.random.randn(2, 5000) * 0.001  # small amplitude OPM-like
         block_size = 1000
 
         # Single pass.
-        proc_single = EcgProcessor(sample_rate=fs, num_channels=2)
+        proc_single = OpmProcessor(sample_rate=fs, num_channels=2)
         out_single = proc_single.process(full_sig.copy())
 
         # Streaming blocks.
-        proc_stream = EcgProcessor(sample_rate=fs, num_channels=2)
+        proc_stream = OpmProcessor(sample_rate=fs, num_channels=2)
         out_blocks = []
         for i in range(0, full_sig.shape[1], block_size):
             block = full_sig[:, i : i + block_size]

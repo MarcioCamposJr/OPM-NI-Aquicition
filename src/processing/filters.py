@@ -1,4 +1,4 @@
-"""Digital IIR filters for real-time ECG signal conditioning.
+"""Digital IIR filters for real-time OPM signal conditioning.
 
 All filters use Second-Order Sections (SOS) representation for
 numerical stability and maintain internal state (``zi``) so they
@@ -123,10 +123,10 @@ class NotchFilter(_StreamingFilter):
         self.order = order
 
 
-# ── Bandpass filter — 2–50 Hz ECG band ───────────────────────────────────── #
+# ── Bandpass filter — 2–50 Hz OPM band ───────────────────────────────────── #
 
 class BandpassFilter(_StreamingFilter):
-    """IIR Butterworth band-pass filter for ECG signal conditioning.
+    """IIR Butterworth band-pass filter for OPM signal conditioning.
 
     Default design: **order 4**, passing **2–50 Hz**.
 

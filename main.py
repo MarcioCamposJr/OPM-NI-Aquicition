@@ -1,4 +1,4 @@
-"""OPM ECG Acquisition — Application entry point.
+"""OPM OPM Acquisition — Application entry point.
 
 Launches the PyQt6 application with the main window, dark theme,
 and structured logging.
@@ -25,13 +25,13 @@ def _setup_logging() -> None:
 
 
 def main() -> None:
-    """Create and run the ECG acquisition application."""
+    """Create and run the OPM acquisition application."""
     _setup_logging()
     logger = logging.getLogger(__name__)
-    logger.info("Starting OPM ECG Acquisition…")
+    logger.info("Starting OPM OPM Acquisition…")
 
     app = QApplication(sys.argv)
-    app.setApplicationName("OPM ECG Acquisition")
+    app.setApplicationName("OPM OPM Acquisition")
     app.setOrganizationName("OPM")
     app.setOrganizationDomain("opm.local")
 

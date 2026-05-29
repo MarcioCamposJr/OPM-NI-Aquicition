@@ -1,4 +1,4 @@
-"""Export acquired ECG data to CSV and Excel formats.
+"""Export acquired OPM data to CSV and Excel formats.
 
 Provides a simple, stateless utility class that converts NumPy arrays
 into tabular files using ``pandas``.
@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class DataExporter:
-    """Export multi-channel ECG data to spreadsheet formats.
+    """Export multi-channel OPM data to spreadsheet formats.
 
     All methods are stateless — they receive the data, write the file,
     and return.  The caller is responsible for accumulating the data

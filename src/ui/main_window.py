@@ -2,7 +2,7 @@
 
 ``MainWindow`` wires together:
 - ``DaqWorker`` (hardware, background thread)
-- ``EcgProcessor`` (signal processing)
+- ``OpmProcessor`` (signal processing)
 - ``TdmsRecorder`` / ``DataExporter`` (data persistence)
 - ``ChartWidget`` + ``ControlPanel`` + ``SettingsDialog`` (UI)
 """
@@ -27,7 +27,7 @@ from PyQt6.QtWidgets import (
 
 from src.hardware.daq_config import DaqConfig
 from src.hardware.daq_worker import DaqWorker
-from src.processing.ecg_processor import EcgProcessor
+from src.processing.opm_processor import OpmProcessor
 from src.data.tdms_recorder import TdmsRecorder
 from src.data.exporter import DataExporter
 from src.ui.chart_widget import ChartWidget
@@ -56,13 +56,13 @@ class MainWindow(QMainWindow):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("OPM ECG Acquisition  --  cDAQ-9171  |  24 Channels")
+        self.setWindowTitle("OPM OPM Acquisition  --  cDAQ-9171  |  24 Channels")
         self.setMinimumSize(1200, 700)
 
         # ── State ─────────────────────────────────────────────────────── #
         self._daq_config = DaqConfig()
         self._daq_worker: DaqWorker | None = None
-        self._processor: EcgProcessor | None = None
+        self._processor: OpmProcessor | None = None
         self._recorder = TdmsRecorder()
         self._exporter = DataExporter()
         self._ica_window: IcaWindow | None = None
@@ -128,7 +128,7 @@ class MainWindow(QMainWindow):
     # ── Acquisition start / stop ──────────────────────────────────────── #
 
     def _start_acquisition(self) -> None:
-        """Create DaqWorker + EcgProcessor and begin reading."""
+        """Create DaqWorker + OpmProcessor and begin reading."""
         try:
             # Apply quick-settings sample rate.
             self._daq_config.sample_rate = self._control_panel.get_sample_rate()
@@ -226,10 +226,10 @@ class MainWindow(QMainWindow):
     def _toggle_recording(self, active: bool) -> None:
         """Start or stop TDMS recording."""
         if active:
-            settings = QSettings("OPM", "ECG-Acquisition")
+            settings = QSettings("OPM", "OPM-Acquisition")
             output_dir = settings.value("export/output_dir", ".")
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            filepath = Path(output_dir) / f"ecg_recording_{timestamp}.tdms"
+            filepath = Path(output_dir) / f"opm_recording_{timestamp}.tdms"
 
             self._recorder.start(
                 filepath=filepath,
@@ -259,7 +259,7 @@ class MainWindow(QMainWindow):
         filepath, selected_filter = QFileDialog.getSaveFileName(
             self,
             "Export Data",
-            f"ecg_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            f"opm_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             "CSV (*.csv);;Excel (*.xlsx)",
         )
         if not filepath:
@@ -327,9 +327,9 @@ class MainWindow(QMainWindow):
     # ── Internal helpers ──────────────────────────────────────────────── #
 
     def _rebuild_processor(self) -> None:
-        """Create a fresh EcgProcessor from current settings."""
-        settings = QSettings("OPM", "ECG-Acquisition")
-        self._processor = EcgProcessor(
+        """Create a fresh OpmProcessor from current settings."""
+        settings = QSettings("OPM", "OPM-Acquisition")
+        self._processor = OpmProcessor(
             sample_rate=self._daq_config.sample_rate,
             num_channels=self._daq_config.num_channels,
             notch_enabled=settings.value("filters/notch_enabled", True, type=bool),
@@ -344,7 +344,7 @@ class MainWindow(QMainWindow):
 
     def _apply_persisted_settings(self) -> None:
         """Apply QSettings-persisted values to the DaqConfig at startup."""
-        s = QSettings("OPM", "ECG-Acquisition")
+        s = QSettings("OPM", "OPM-Acquisition")
         self._daq_config = DaqConfig(
             device_name=s.value("hw/device", self._daq_config.device_name),
             channel_prefix=s.value("hw/prefix", self._daq_config.channel_prefix),

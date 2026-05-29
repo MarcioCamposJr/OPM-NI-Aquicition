@@ -1,4 +1,4 @@
-"""Streaming TDMS file recorder for continuous ECG data.
+"""Streaming TDMS file recorder for continuous OPM data.
 
 Uses ``nptdms.TdmsWriter`` in append mode so that each incoming data
 block is written incrementally — no need to hold the entire recording
@@ -36,7 +36,7 @@ class TdmsRecorder:
         TDMS group under which channels are stored (default ``"ECG"``).
     """
 
-    def __init__(self, group_name: str = "ECG") -> None:
+    def __init__(self, group_name: str = "OPM") -> None:
         self._group_name = group_name
         self._writer: TdmsWriter | None = None
         self._filepath: Path | None = None
@@ -84,7 +84,7 @@ class TdmsRecorder:
 
         # Root & group metadata
         root = RootObject(properties={
-            "description": "OPM ECG Acquisition",
+            "description": "OPM OPM Acquisition",
             "datetime": datetime.now().isoformat(),
         })
         group = GroupObject(self._group_name, properties={

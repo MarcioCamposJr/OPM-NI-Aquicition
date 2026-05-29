@@ -92,7 +92,7 @@ class DaqWorker(QThread):
 
         task: nidaqmx.Task | None = None
         try:
-            task = nidaqmx.Task("ECG_Acquisition")
+            task = nidaqmx.Task("OPM_Acquisition")
 
             # ── add channels ────────────────────────────────────────────── #
             terminal = _resolve_terminal_config(cfg.terminal_config)

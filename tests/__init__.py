@@ -1,1 +1,1 @@
-"""Unit tests for the ECG acquisition system."""
+"""Unit tests for the OPM acquisition system."""
