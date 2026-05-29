@@ -1,0 +1,25 @@
+[project]
+name = "opm-ni-acquisition"
+version = "0.1.0"
+description = "ECG 24-channel acquisition system — migrated from LabVIEW (AM-24 chan-convert_TDMS - ECG.vi)"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "PyQt6>=6.6",
+    "pyqtgraph>=0.13",
+    "nidaqmx>=1.0",
+    "scipy>=1.12",
+    "numpy>=1.26",
+    "nptdms>=1.9",
+    "pandas>=2.2",
+    "openpyxl>=3.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "pytest-qt>=4.4",
+]
+
+[project.scripts]
+ecg-acquire = "main:main"
