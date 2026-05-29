@@ -84,7 +84,7 @@ class TdmsRecorder:
 
         # Root & group metadata
         root = RootObject(properties={
-            "description": "OPM OPM Acquisition",
+            "description": "OPM Acquisition",
             "datetime": datetime.now().isoformat(),
         })
         group = GroupObject(self._group_name, properties={

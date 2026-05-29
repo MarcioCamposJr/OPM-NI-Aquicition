@@ -1,4 +1,4 @@
-"""OPM OPM Acquisition — Application entry point.
+"""OPM Acquisition — Application entry point.
 
 Launches the PyQt6 application with the main window, dark theme,
 and structured logging.
@@ -28,10 +28,10 @@ def main() -> None:
     """Create and run the OPM acquisition application."""
     _setup_logging()
     logger = logging.getLogger(__name__)
-    logger.info("Starting OPM OPM Acquisition…")
+    logger.info("Starting OPM Acquisition…")
 
     app = QApplication(sys.argv)
-    app.setApplicationName("OPM OPM Acquisition")
+    app.setApplicationName("OPM Acquisition")
     app.setOrganizationName("OPM")
     app.setOrganizationDomain("opm.local")
 

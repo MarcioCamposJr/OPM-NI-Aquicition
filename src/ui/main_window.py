@@ -56,7 +56,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("OPM OPM Acquisition  --  cDAQ-9171  |  24 Channels")
+        self.setWindowTitle("OPM Acquisition  --  cDAQ-9171  |  24 Channels")
         self.setMinimumSize(1200, 700)
 
         # ── State ─────────────────────────────────────────────────────── #
