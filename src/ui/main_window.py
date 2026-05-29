@@ -132,6 +132,9 @@ class MainWindow(QMainWindow):
         try:
             # Apply quick-settings sample rate.
             self._daq_config.sample_rate = self._control_panel.get_sample_rate()
+            
+            # Auto-calculate samples per read (10 updates per second)
+            self._daq_config.samples_per_read = max(10, int(self._daq_config.sample_rate / 10))
 
             # Rebuild processor with current filter settings.
             self._rebuild_processor()
@@ -346,7 +349,6 @@ class MainWindow(QMainWindow):
             device_name=s.value("hw/device", self._daq_config.device_name),
             channel_prefix=s.value("hw/prefix", self._daq_config.channel_prefix),
             sample_rate=float(s.value("acq/sample_rate", self._daq_config.sample_rate)),
-            samples_per_read=int(s.value("hw/samples_per_read", self._daq_config.samples_per_read)),
             min_voltage=float(s.value("hw/vmin", self._daq_config.min_voltage)),
             max_voltage=float(s.value("hw/vmax", self._daq_config.max_voltage)),
             terminal_config=s.value("hw/terminal", self._daq_config.terminal_config),
