@@ -32,8 +32,8 @@ def _resolve_terminal_config(name: str):
     _MAP = {
         "RSE": nic.TerminalConfiguration.RSE,
         "NRSE": nic.TerminalConfiguration.NRSE,
-        "DIFF": nic.TerminalConfiguration.DIFFERENTIAL,
-        "PSEUDO_DIFF": nic.TerminalConfiguration.PSEUDODIFFERENTIAL,
+        "DIFF": nic.TerminalConfiguration.DIFF,
+        "PSEUDO_DIFF": nic.TerminalConfiguration.PSEUDO_DIFF,
     }
     try:
         return _MAP[name.upper()]
