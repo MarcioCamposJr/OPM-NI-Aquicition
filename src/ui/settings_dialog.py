@@ -25,6 +25,7 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QFileDialog,
+    QGridLayout,
 )
 
 from src.hardware.daq_config import DaqConfig
@@ -40,10 +41,9 @@ class SettingsDialog(QDialog):
 
     Tabs
     ----
-    - **Hardware** : device, channels, terminal config, voltage range.
-    - **Aquisição** : sample rate, samples per read, visualisation window.
-    - **Filtros** : enable/disable and tune notch & bandpass filters.
-    - **Exportação** : default output directory and format.
+    - **Hardware** : device, terminal config, voltage range, samples/read, active channels.
+    - **Filters** : enable/disable and tune notch & bandpass filters.
+    - **Export** : default output directory and format.
 
     Parameters
     ----------
@@ -75,7 +75,6 @@ class SettingsDialog(QDialog):
 
         # ── Build tabs ────────────────────────────────────────────────── #
         self._build_hardware_tab(cfg)
-        self._build_acquisition_tab(cfg)
         self._build_filters_tab()
         self._build_export_tab()
 
@@ -103,12 +102,7 @@ class SettingsDialog(QDialog):
         layout.setSpacing(10)
 
         self._edit_device = QLineEdit(cfg.device_name)
-        layout.addRow("Device Name:", self._edit_device)
-
-        self._spin_num_ch = QSpinBox()
-        self._spin_num_ch.setRange(1, 64)
-        self._spin_num_ch.setValue(cfg.num_channels)
-        layout.addRow("CHANNELS:", self._spin_num_ch)
+        layout.addRow("DEVICE NAME:", self._edit_device)
 
         self._edit_prefix = QLineEdit(cfg.channel_prefix)
         layout.addRow("CH PREFIX:", self._edit_prefix)
@@ -123,45 +117,49 @@ class SettingsDialog(QDialog):
         self._spin_vmin.setValue(cfg.min_voltage)
         self._spin_vmin.setSuffix(" V")
         self._spin_vmin.setDecimals(1)
-        layout.addRow("V Min:", self._spin_vmin)
+        layout.addRow("V MIN:", self._spin_vmin)
 
         self._spin_vmax = QDoubleSpinBox()
         self._spin_vmax.setRange(0.0, 100.0)
         self._spin_vmax.setValue(cfg.max_voltage)
         self._spin_vmax.setSuffix(" V")
         self._spin_vmax.setDecimals(1)
-        layout.addRow("V Max:", self._spin_vmax)
-
-        self._tabs.addTab(page, "Hardware")
-
-    def _build_acquisition_tab(self, cfg: DaqConfig) -> None:
-        page = QWidget()
-        layout = QFormLayout(page)
-        layout.setSpacing(10)
-
-        self._spin_sr = QDoubleSpinBox()
-        self._spin_sr.setRange(100.0, 51200.0)
-        self._spin_sr.setValue(cfg.sample_rate)
-        self._spin_sr.setSuffix(" Hz")
-        self._spin_sr.setDecimals(0)
-        layout.addRow("Sample Rate:", self._spin_sr)
-
+        layout.addRow("V MAX:", self._spin_vmax)
+        
         self._spin_spr = QSpinBox()
         self._spin_spr.setRange(10, 100000)
         self._spin_spr.setValue(cfg.samples_per_read)
-        layout.addRow("Samples / Read:", self._spin_spr)
+        layout.addRow("SAMPLES/READ:", self._spin_spr)
 
-        self._spin_window = QDoubleSpinBox()
-        self._spin_window.setRange(1.0, 30.0)
-        self._spin_window.setValue(
-            float(self._settings.value("acq/window_seconds", 5.0))
-        )
-        self._spin_window.setSuffix(" s")
-        self._spin_window.setDecimals(1)
-        self._spin_window.setSingleStep(0.5)
-        layout.addRow("DISPLAY WINDOW:", self._spin_window)
+        # ── Active Channels Group ─────────────────────────────────────── #
+        ch_group = QGroupBox("ACTIVE CHANNELS")
+        ch_layout = QGridLayout(ch_group)
+        ch_layout.setSpacing(8)
+        
+        # Select All / None buttons
+        btn_all = QPushButton("ALL")
+        btn_all.clicked.connect(lambda: self._set_all_channels(True))
+        btn_none = QPushButton("NONE")
+        btn_none.clicked.connect(lambda: self._set_all_channels(False))
+        
+        ch_layout.addWidget(btn_all, 0, 0, 1, 2)
+        ch_layout.addWidget(btn_none, 0, 2, 1, 2)
 
-        self._tabs.addTab(page, "Acquisition")
+        self._chk_channels: list[QCheckBox] = []
+        for i in range(24):
+            chk = QCheckBox(f"CH {i+1:02d}")
+            chk.setChecked(i in cfg.active_channels)
+            self._chk_channels.append(chk)
+            row = (i // 4) + 1
+            col = i % 4
+            ch_layout.addWidget(chk, row, col)
+
+        layout.addRow(ch_group)
+        self._tabs.addTab(page, "Hardware")
+
+    def _set_all_channels(self, state: bool) -> None:
+        for chk in self._chk_channels:
+            chk.setChecked(state)
 
     def _build_filters_tab(self) -> None:
         page = QWidget()
@@ -276,17 +274,24 @@ class SettingsDialog(QDialog):
 
         # Hardware
         self._edit_device.setText(s.value("hw/device", self._edit_device.text()))
-        self._spin_num_ch.setValue(int(s.value("hw/num_channels", self._spin_num_ch.value())))
         self._edit_prefix.setText(s.value("hw/prefix", self._edit_prefix.text()))
         self._combo_terminal.setCurrentText(
             s.value("hw/terminal", self._combo_terminal.currentText())
         )
         self._spin_vmin.setValue(float(s.value("hw/vmin", self._spin_vmin.value())))
         self._spin_vmax.setValue(float(s.value("hw/vmax", self._spin_vmax.value())))
-
-        # Acquisition
-        self._spin_sr.setValue(float(s.value("acq/sample_rate", self._spin_sr.value())))
-        self._spin_spr.setValue(int(s.value("acq/samples_per_read", self._spin_spr.value())))
+        self._spin_spr.setValue(int(s.value("hw/samples_per_read", self._spin_spr.value())))
+        
+        # Channels
+        active_channels = s.value("hw/active_channels", list(range(24)))
+        # Handle cases where QSettings returns strings due to persistence limits
+        if isinstance(active_channels, str):
+            active_channels = [int(x.strip()) for x in active_channels.split(",") if x.strip()]
+        elif isinstance(active_channels, list):
+            active_channels = [int(x) for x in active_channels]
+            
+        for i, chk in enumerate(self._chk_channels):
+            chk.setChecked(i in active_channels)
 
     def _save_settings(self) -> None:
         """Persist current widget values to QSettings."""
@@ -294,16 +299,14 @@ class SettingsDialog(QDialog):
 
         # Hardware
         s.setValue("hw/device", self._edit_device.text())
-        s.setValue("hw/num_channels", self._spin_num_ch.value())
         s.setValue("hw/prefix", self._edit_prefix.text())
         s.setValue("hw/terminal", self._combo_terminal.currentText())
         s.setValue("hw/vmin", self._spin_vmin.value())
         s.setValue("hw/vmax", self._spin_vmax.value())
-
-        # Acquisition
-        s.setValue("acq/sample_rate", self._spin_sr.value())
-        s.setValue("acq/samples_per_read", self._spin_spr.value())
-        s.setValue("acq/window_seconds", self._spin_window.value())
+        s.setValue("hw/samples_per_read", self._spin_spr.value())
+        
+        active_channels = [i for i, chk in enumerate(self._chk_channels) if chk.isChecked()]
+        s.setValue("hw/active_channels", active_channels)
 
         # Filters
         s.setValue("filters/notch_enabled", self._chk_notch.isChecked())
@@ -327,15 +330,12 @@ class SettingsDialog(QDialog):
         """Reset all widgets to factory defaults."""
         cfg = DaqConfig()
         self._edit_device.setText(cfg.device_name)
-        self._spin_num_ch.setValue(cfg.num_channels)
         self._edit_prefix.setText(cfg.channel_prefix)
         self._combo_terminal.setCurrentText(cfg.terminal_config)
         self._spin_vmin.setValue(cfg.min_voltage)
         self._spin_vmax.setValue(cfg.max_voltage)
-
-        self._spin_sr.setValue(cfg.sample_rate)
         self._spin_spr.setValue(cfg.samples_per_read)
-        self._spin_window.setValue(5.0)
+        self._set_all_channels(True)
 
         self._chk_notch.setChecked(True)
         self._spin_notch_low.setValue(59.0)
@@ -361,11 +361,13 @@ class SettingsDialog(QDialog):
 
     def get_daq_config(self) -> DaqConfig:
         """Build a ``DaqConfig`` from the current dialog values."""
+        active_channels = [i for i, chk in enumerate(self._chk_channels) if chk.isChecked()]
+        
         return DaqConfig(
             device_name=self._edit_device.text(),
-            num_channels=self._spin_num_ch.value(),
+            active_channels=active_channels,
             channel_prefix=self._edit_prefix.text(),
-            sample_rate=self._spin_sr.value(),
+            sample_rate=1000.0, # Will be set by ControlPanel
             samples_per_read=self._spin_spr.value(),
             min_voltage=self._spin_vmin.value(),
             max_voltage=self._spin_vmax.value(),
@@ -384,9 +386,6 @@ class SettingsDialog(QDialog):
             "bp_high": self._spin_bp_high.value(),
             "bp_order": self._spin_bp_order.value(),
         }
-
-    def get_window_seconds(self) -> float:
-        return self._spin_window.value()
 
     def get_output_dir(self) -> str:
         return self._edit_output_dir.text()

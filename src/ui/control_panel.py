@@ -7,7 +7,7 @@ elements — purely functional.
 
 from __future__ import annotations
 
-from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtCore import Qt, pyqtSignal, QSettings
 from PyQt6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -87,6 +87,7 @@ class ControlPanel(QWidget):
         self.setFixedWidth(264)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
         self._is_recording = False
+        self._settings = QSettings("OPM", "ECG-Acquisition")
         self._setup_ui()
 
     # ── UI Construction ───────────────────────────────────────────────── #
@@ -175,19 +176,19 @@ class ControlPanel(QWidget):
 
         self._spin_sample_rate = QDoubleSpinBox()
         self._spin_sample_rate.setRange(100.0, 51200.0)
-        self._spin_sample_rate.setValue(1000.0)
+        self._spin_sample_rate.setValue(float(self._settings.value("acq/sample_rate", 1000.0)))
         self._spin_sample_rate.setSuffix("  Hz")
         self._spin_sample_rate.setDecimals(0)
-        self._spin_sample_rate.valueChanged.connect(self.sample_rate_changed.emit)
+        self._spin_sample_rate.valueChanged.connect(self._on_sample_rate_changed)
         param_layout.addRow("RATE:", self._spin_sample_rate)
 
         self._spin_window = QDoubleSpinBox()
         self._spin_window.setRange(1.0, 30.0)
-        self._spin_window.setValue(5.0)
+        self._spin_window.setValue(float(self._settings.value("acq/window_seconds", 5.0)))
         self._spin_window.setSuffix("  s")
         self._spin_window.setDecimals(1)
         self._spin_window.setSingleStep(0.5)
-        self._spin_window.valueChanged.connect(self.window_seconds_changed.emit)
+        self._spin_window.valueChanged.connect(self._on_window_changed)
         param_layout.addRow("WINDOW:", self._spin_window)
 
         layout.addWidget(param_group)
@@ -216,6 +217,14 @@ class ControlPanel(QWidget):
         else:
             self._btn_record.setText("REC  TDMS")
         self.save_toggled.emit(checked)
+        
+    def _on_sample_rate_changed(self, value: float) -> None:
+        self._settings.setValue("acq/sample_rate", value)
+        self.sample_rate_changed.emit(value)
+
+    def _on_window_changed(self, value: float) -> None:
+        self._settings.setValue("acq/window_seconds", value)
+        self.window_seconds_changed.emit(value)
 
     # ── Public methods for MainWindow to update state ─────────────────── #
 

@@ -98,7 +98,8 @@ class MainWindow(QMainWindow):
 
         # Right: chart grid
         self._chart = ChartWidget(
-            num_channels=self._daq_config.num_channels,
+            num_channels=24, # Physical slots in grid
+            active_channels=self._daq_config.active_channels,
             sample_rate=self._daq_config.sample_rate,
             window_seconds=self._control_panel.get_window_seconds(),
         )
@@ -149,7 +150,7 @@ class MainWindow(QMainWindow):
             self._statusbar.showMessage(
                 f"DAQ: {self._daq_config.device_name} @ "
                 f"{self._daq_config.sample_rate:.0f} Hz  |  "
-                f"{self._daq_config.num_channels} CH"
+                f"{self._daq_config.num_channels} Active CH"
             )
             logger.info("Acquisition started.")
 
@@ -281,11 +282,9 @@ class MainWindow(QMainWindow):
         dialog = SettingsDialog(daq_config=self._daq_config, parent=self)
         if dialog.exec():
             self._daq_config = dialog.get_daq_config()
-            self._control_panel.set_sample_rate(self._daq_config.sample_rate)
-
-            window_s = dialog.get_window_seconds()
-            self._control_panel.set_window_seconds(window_s)
-            self._chart.set_window_seconds(window_s)
+            
+            # Update chart active channels and reset
+            self._chart.set_active_channels(self._daq_config.active_channels)
 
             # Rebuild processor with new filter settings.
             self._rebuild_processor()
@@ -324,14 +323,21 @@ class MainWindow(QMainWindow):
         s = QSettings("OPM", "ECG-Acquisition")
         self._daq_config = DaqConfig(
             device_name=s.value("hw/device", self._daq_config.device_name),
-            num_channels=int(s.value("hw/num_channels", self._daq_config.num_channels)),
             channel_prefix=s.value("hw/prefix", self._daq_config.channel_prefix),
             sample_rate=float(s.value("acq/sample_rate", self._daq_config.sample_rate)),
-            samples_per_read=int(s.value("acq/samples_per_read", self._daq_config.samples_per_read)),
+            samples_per_read=int(s.value("hw/samples_per_read", self._daq_config.samples_per_read)),
             min_voltage=float(s.value("hw/vmin", self._daq_config.min_voltage)),
             max_voltage=float(s.value("hw/vmax", self._daq_config.max_voltage)),
             terminal_config=s.value("hw/terminal", self._daq_config.terminal_config),
         )
+        
+        # Load active channels safely
+        active_channels = s.value("hw/active_channels", list(range(24)))
+        if isinstance(active_channels, str):
+            active_channels = [int(x.strip()) for x in active_channels.split(",") if x.strip()]
+        elif isinstance(active_channels, list):
+            active_channels = [int(x) for x in active_channels]
+        self._daq_config.active_channels = active_channels
 
     # ── Window lifecycle ──────────────────────────────────────────────── #
 
