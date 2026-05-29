@@ -126,6 +126,13 @@ class SettingsDialog(QDialog):
         self._spin_vmax.setDecimals(1)
         layout.addRow("V MAX:", self._spin_vmax)
         
+        self._spin_sample_rate = QDoubleSpinBox()
+        self._spin_sample_rate.setRange(100.0, 51200.0)
+        self._spin_sample_rate.setValue(float(self._settings.value("acq/sample_rate", cfg.sample_rate)))
+        self._spin_sample_rate.setSuffix(" Hz")
+        self._spin_sample_rate.setDecimals(0)
+        layout.addRow("SAMPLE RATE:", self._spin_sample_rate)
+        
         self._spin_spr = QSpinBox()
         self._spin_spr.setRange(10, 100000)
         self._spin_spr.setValue(cfg.samples_per_read)
@@ -298,6 +305,7 @@ class SettingsDialog(QDialog):
         )
         self._spin_vmin.setValue(float(s.value("hw/vmin", self._spin_vmin.value())))
         self._spin_vmax.setValue(float(s.value("hw/vmax", self._spin_vmax.value())))
+        self._spin_sample_rate.setValue(float(s.value("acq/sample_rate", self._spin_sample_rate.value())))
         self._spin_spr.setValue(int(s.value("hw/samples_per_read", self._spin_spr.value())))
         
         # Channels
@@ -321,6 +329,7 @@ class SettingsDialog(QDialog):
         s.setValue("hw/terminal", self._combo_terminal.currentText())
         s.setValue("hw/vmin", self._spin_vmin.value())
         s.setValue("hw/vmax", self._spin_vmax.value())
+        s.setValue("acq/sample_rate", self._spin_sample_rate.value())
         s.setValue("hw/samples_per_read", self._spin_spr.value())
         
         active_channels = [i for i, chk in enumerate(self._chk_channels) if chk.isChecked()]
@@ -352,6 +361,7 @@ class SettingsDialog(QDialog):
         self._combo_terminal.setCurrentText(cfg.terminal_config)
         self._spin_vmin.setValue(cfg.min_voltage)
         self._spin_vmax.setValue(cfg.max_voltage)
+        self._spin_sample_rate.setValue(cfg.sample_rate)
         self._spin_spr.setValue(cfg.samples_per_read)
         self._set_all_channels(True)
 
@@ -385,7 +395,7 @@ class SettingsDialog(QDialog):
             device_name=self._edit_device.text(),
             active_channels=active_channels,
             channel_prefix=self._edit_prefix.text(),
-            sample_rate=1000.0, # Will be set by ControlPanel
+            sample_rate=self._spin_sample_rate.value(),
             samples_per_read=self._spin_spr.value(),
             min_voltage=self._spin_vmin.value(),
             max_voltage=self._spin_vmax.value(),

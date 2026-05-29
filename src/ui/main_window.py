@@ -184,16 +184,16 @@ class MainWindow(QMainWindow):
         # 2. Update chart
         self._chart.update_data(filtered)
 
-        # 3. Record if active
+        # 3. Record if active (saving raw data)
         if self._recorder.is_recording:
-            self._recorder.write(filtered)
+            self._recorder.write(raw_data)
             
         # 4. Route to ICA if active
         if self._ica_window is not None and self._ica_window.isVisible():
             self._ica_window.add_data(filtered)
 
-        # 5. Accumulate for potential export
-        self._export_buffer.append(filtered)
+        # 5. Accumulate for potential export (saving raw data)
+        self._export_buffer.append(raw_data)
 
         # Limit buffer to ~60 seconds to avoid unbounded memory usage.
         max_blocks = int(
@@ -303,6 +303,9 @@ class MainWindow(QMainWindow):
             
             # Update chart active channels and reset
             self._chart.set_active_channels(self._daq_config.active_channels)
+
+            # Synchronize control panel sample rate
+            self._control_panel.set_sample_rate(self._daq_config.sample_rate)
 
             # Rebuild processor with new filter settings.
             self._rebuild_processor()

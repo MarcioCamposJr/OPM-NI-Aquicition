@@ -155,7 +155,7 @@ class ControlPanel(QWidget):
         rec_layout = QVBoxLayout(rec_group)
         rec_layout.setSpacing(6)
 
-        self._btn_record = QPushButton("REC  TDMS")
+        self._btn_record = QPushButton("START REC")
         self._btn_record.setObjectName("btn_record")
         self._btn_record.setCheckable(True)
         self._btn_record.setEnabled(False)
