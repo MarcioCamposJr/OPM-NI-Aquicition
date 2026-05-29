@@ -138,11 +138,21 @@ class DaqWorker(QThread):
                     # Emit a *copy* so downstream consumers own the memory.
                     self.data_ready.emit(buffer.copy())
                 except nidaqmx.errors.DaqReadError as exc:
+                    # Timeout is handled gracefully (-200284).
                     logger.warning("Read timeout/error: %s", exc)
-                    # Transient errors (e.g. timeout) are logged but don't
-                    # kill the loop.  The flag ``self._running`` can still
-                    # be flipped externally to break out.
                     continue
+                except nidaqmx.errors.DaqError as exc:
+                    # Specific DAQmx errors like Buffer Overflow (-200279)
+                    # or Overwrite (-200281) are fatal and require restart.
+                    if exc.error_code in (-200279, -200281):
+                        msg = "DAQ Buffer Overflow/Overwrite. Hardware is acquiring faster than the PC can read. Reduce sample rate or increase block size."
+                        logger.error(msg)
+                        self.error_occurred.emit(msg)
+                        break
+                    else:
+                        logger.error("Unhandled DAQError: %s", exc)
+                        self.error_occurred.emit(str(exc))
+                        break
 
         except Exception as exc:
             msg = f"DAQ error: {exc}"

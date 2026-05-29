@@ -183,6 +183,10 @@ class ChartWidget(QWidget):
         plot.showGrid(x=True, y=True, alpha=0.2)
         plot.hideButtons()
         plot.setMenuEnabled(False)
+        
+        # Extreme performance optimizations for high-density rendering.
+        plot.setDownsampling(auto=True, mode='peak')
+        plot.setClipToView(True)
 
         # Minimal axis labels — only leftmost column shows Y, bottom row shows X.
         row = channel_index // self._cols
