@@ -23,6 +23,8 @@ from PyQt6.QtWidgets import (
     QLabel,
     QMessageBox,
     QSplitter,
+    QDoubleSpinBox,
+    QFormLayout,
 )
 
 from src.processing.ica_worker import IcaWorker
@@ -55,6 +57,7 @@ class IcaWindow(QMainWindow):
         self._worker: IcaWorker | None = None
         self._thread: QThread | None = None
         self._is_running = False
+        self._current_window_seconds = 4.0
         
         self._build_ui()
 
@@ -106,6 +109,19 @@ class IcaWindow(QMainWindow):
             
         v_ch.addLayout(ch_grid)
         cp_layout.addWidget(ch_group)
+        
+        # Parameters Group
+        param_group = QGroupBox("PARAMETERS")
+        param_layout = QFormLayout(param_group)
+        param_layout.setContentsMargins(10, 10, 10, 10)
+        self._spin_window = QDoubleSpinBox()
+        self._spin_window.setRange(1.0, 30.0)
+        self._spin_window.setValue(4.0)
+        self._spin_window.setSuffix(" s")
+        self._spin_window.setDecimals(1)
+        self._spin_window.setSingleStep(0.5)
+        param_layout.addRow("WINDOW:", self._spin_window)
+        cp_layout.addWidget(param_group)
         
         # Run Button
         self._btn_run = QPushButton("START ICA")
@@ -169,6 +185,7 @@ class IcaWindow(QMainWindow):
         self._btn_none.setEnabled(True)
         for chk in self._checkboxes:
             chk.setEnabled(True)
+        self._spin_window.setEnabled(True)
             
         self._btn_run.setText("START ICA")
         self._btn_run.setObjectName("btn_start")
@@ -224,7 +241,7 @@ class IcaWindow(QMainWindow):
     def _on_ica_computed(self, sources: np.ndarray) -> None:
         """Update the charts with the new ICA sources."""
         num_comp, num_samples = sources.shape
-        time_axis = np.linspace(0, 3.0, num_samples)
+        time_axis = np.linspace(0, self._current_window_seconds, num_samples)
         
         for i in range(min(num_comp, len(self._curves))):
             self._curves[i].setData(time_axis, sources[i])
@@ -250,11 +267,13 @@ class IcaWindow(QMainWindow):
             return
             
         self._selected_channels = selected
+        self._current_window_seconds = self._spin_window.value()
         
         self._btn_all.setEnabled(False)
         self._btn_none.setEnabled(False)
         for chk in self._checkboxes:
             chk.setEnabled(False)
+        self._spin_window.setEnabled(False)
             
         self._btn_run.setText("STOP ICA")
         self._btn_run.setObjectName("btn_stop")
@@ -267,7 +286,7 @@ class IcaWindow(QMainWindow):
         self._worker = IcaWorker(
             sample_rate=self._sample_rate,
             active_channels=selected,
-            window_seconds=3.0,
+            window_seconds=self._current_window_seconds,
             update_interval_ms=500
         )
         self._worker.moveToThread(self._thread)
