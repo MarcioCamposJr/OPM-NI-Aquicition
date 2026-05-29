@@ -59,7 +59,7 @@ class SettingsDialog(QDialog):
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
-        self.setWindowTitle("Configurações")
+        self.setWindowTitle("SETTINGS")
         self.setMinimumSize(520, 480)
         self.setModal(True)
 
@@ -108,15 +108,15 @@ class SettingsDialog(QDialog):
         self._spin_num_ch = QSpinBox()
         self._spin_num_ch.setRange(1, 64)
         self._spin_num_ch.setValue(cfg.num_channels)
-        layout.addRow("Nº Canais:", self._spin_num_ch)
+        layout.addRow("CHANNELS:", self._spin_num_ch)
 
         self._edit_prefix = QLineEdit(cfg.channel_prefix)
-        layout.addRow("Channel Prefix:", self._edit_prefix)
+        layout.addRow("CH PREFIX:", self._edit_prefix)
 
         self._combo_terminal = QComboBox()
         self._combo_terminal.addItems(["RSE", "NRSE", "DIFF", "PSEUDO_DIFF"])
         self._combo_terminal.setCurrentText(cfg.terminal_config)
-        layout.addRow("Terminal Config:", self._combo_terminal)
+        layout.addRow("TERMINAL:", self._combo_terminal)
 
         self._spin_vmin = QDoubleSpinBox()
         self._spin_vmin.setRange(-100.0, 0.0)
@@ -159,9 +159,9 @@ class SettingsDialog(QDialog):
         self._spin_window.setSuffix(" s")
         self._spin_window.setDecimals(1)
         self._spin_window.setSingleStep(0.5)
-        layout.addRow("Janela Visualização:", self._spin_window)
+        layout.addRow("DISPLAY WINDOW:", self._spin_window)
 
-        self._tabs.addTab(page, "Aquisição")
+        self._tabs.addTab(page, "Acquisition")
 
     def _build_filters_tab(self) -> None:
         page = QWidget()
@@ -169,10 +169,10 @@ class SettingsDialog(QDialog):
         layout.setSpacing(12)
 
         # ── Notch ─────────────────────────────────────────────────────── #
-        notch_group = QGroupBox("Filtro Notch (Rejeição 60 Hz)")
+        notch_group = QGroupBox("NOTCH FILTER  (60 Hz REJECTION)")
         notch_layout = QFormLayout(notch_group)
 
-        self._chk_notch = QCheckBox("Ativado")
+        self._chk_notch = QCheckBox("Enabled")
         self._chk_notch.setChecked(
             self._settings.value("filters/notch_enabled", True, type=bool)
         )
@@ -184,7 +184,7 @@ class SettingsDialog(QDialog):
             float(self._settings.value("filters/notch_low", 59.0))
         )
         self._spin_notch_low.setSuffix(" Hz")
-        notch_layout.addRow("Freq. Inferior:", self._spin_notch_low)
+        notch_layout.addRow("LOW FREQ:", self._spin_notch_low)
 
         self._spin_notch_high = QDoubleSpinBox()
         self._spin_notch_high.setRange(1.0, 500.0)
@@ -192,22 +192,22 @@ class SettingsDialog(QDialog):
             float(self._settings.value("filters/notch_high", 61.0))
         )
         self._spin_notch_high.setSuffix(" Hz")
-        notch_layout.addRow("Freq. Superior:", self._spin_notch_high)
+        notch_layout.addRow("HIGH FREQ:", self._spin_notch_high)
 
         self._spin_notch_order = QSpinBox()
         self._spin_notch_order.setRange(1, 10)
         self._spin_notch_order.setValue(
             int(self._settings.value("filters/notch_order", 2))
         )
-        notch_layout.addRow("Ordem:", self._spin_notch_order)
+        notch_layout.addRow("ORDER:", self._spin_notch_order)
 
         layout.addWidget(notch_group)
 
         # ── Bandpass ──────────────────────────────────────────────────── #
-        bp_group = QGroupBox("Filtro Bandpass (Passa-faixa ECG)")
+        bp_group = QGroupBox("BANDPASS FILTER  (ECG BAND)")
         bp_layout = QFormLayout(bp_group)
 
-        self._chk_bp = QCheckBox("Ativado")
+        self._chk_bp = QCheckBox("Enabled")
         self._chk_bp.setChecked(
             self._settings.value("filters/bp_enabled", True, type=bool)
         )
@@ -219,7 +219,7 @@ class SettingsDialog(QDialog):
             float(self._settings.value("filters/bp_low", 2.0))
         )
         self._spin_bp_low.setSuffix(" Hz")
-        bp_layout.addRow("Freq. Inferior:", self._spin_bp_low)
+        bp_layout.addRow("LOW FREQ:", self._spin_bp_low)
 
         self._spin_bp_high = QDoubleSpinBox()
         self._spin_bp_high.setRange(1.0, 500.0)
@@ -227,19 +227,19 @@ class SettingsDialog(QDialog):
             float(self._settings.value("filters/bp_high", 50.0))
         )
         self._spin_bp_high.setSuffix(" Hz")
-        bp_layout.addRow("Freq. Superior:", self._spin_bp_high)
+        bp_layout.addRow("HIGH FREQ:", self._spin_bp_high)
 
         self._spin_bp_order = QSpinBox()
         self._spin_bp_order.setRange(1, 10)
         self._spin_bp_order.setValue(
             int(self._settings.value("filters/bp_order", 4))
         )
-        bp_layout.addRow("Ordem:", self._spin_bp_order)
+        bp_layout.addRow("ORDER:", self._spin_bp_order)
 
         layout.addWidget(bp_group)
         layout.addStretch()
 
-        self._tabs.addTab(page, "Filtros")
+        self._tabs.addTab(page, "Filters")
 
     def _build_export_tab(self) -> None:
         page = QWidget()
@@ -252,11 +252,11 @@ class SettingsDialog(QDialog):
             self._settings.value("export/output_dir", ".")
         )
         dir_row.addWidget(self._edit_output_dir)
-        btn_browse = QPushButton("…")
+        btn_browse = QPushButton("...")
         btn_browse.setFixedWidth(36)
         btn_browse.clicked.connect(self._browse_output_dir)
         dir_row.addWidget(btn_browse)
-        layout.addRow("Diretório Saída:", dir_row)
+        layout.addRow("OUTPUT DIR:", dir_row)
 
         # Default format
         self._combo_format = QComboBox()
@@ -264,9 +264,9 @@ class SettingsDialog(QDialog):
         self._combo_format.setCurrentText(
             self._settings.value("export/default_format", "TDMS")
         )
-        layout.addRow("Formato Padrão:", self._combo_format)
+        layout.addRow("DEFAULT FORMAT:", self._combo_format)
 
-        self._tabs.addTab(page, "Exportação")
+        self._tabs.addTab(page, "Export")
 
     # ── Persistence ───────────────────────────────────────────────────── #
 
@@ -352,7 +352,7 @@ class SettingsDialog(QDialog):
 
     def _browse_output_dir(self) -> None:
         path = QFileDialog.getExistingDirectory(
-            self, "Selecionar diretório de saída", self._edit_output_dir.text()
+            self, "Select Output Directory", self._edit_output_dir.text()
         )
         if path:
             self._edit_output_dir.setText(path)

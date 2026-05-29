@@ -1,8 +1,8 @@
 """Control panel sidebar with acquisition controls and quick settings.
 
-Contains start/stop/record/export buttons, a status indicator, and
-quick-access spinboxes for the most commonly changed parameters
-(sample rate and visualisation window).
+Styled as an instrument front-panel with clear operational groupings,
+monospace readouts, and LED-style status indicators.  No decorative
+elements — purely functional.
 """
 
 from __future__ import annotations
@@ -18,25 +18,43 @@ from PyQt6.QtWidgets import (
     QSpinBox,
     QGroupBox,
     QFormLayout,
+    QFrame,
     QSizePolicy,
 )
 
 from src.ui.styles import (
-    ACCENT_DANGER,
+    ACCENT_RECORD,
     ACCENT_INFO,
-    ACCENT_PRIMARY,
-    ACCENT_SUCCESS,
+    ACCENT_ACTIVE,
     ACCENT_WARNING,
     BG_CARD,
     BG_DARK,
+    BG_INPUT,
     BORDER,
+    LED_ERROR,
+    LED_IDLE,
+    LED_RECORDING,
+    LED_RUNNING,
+    LED_OFF,
+    TEXT_BRIGHT,
+    TEXT_DATA,
     TEXT_PRIMARY,
     TEXT_SECONDARY,
+    FONT_MONO,
 )
 
 
+def _make_separator() -> QFrame:
+    """Create a horizontal separator line."""
+    sep = QFrame()
+    sep.setObjectName("separator")
+    sep.setFrameShape(QFrame.Shape.HLine)
+    sep.setFixedHeight(1)
+    return sep
+
+
 class ControlPanel(QWidget):
-    """Sidebar panel with acquisition controls and quick settings.
+    """Instrument-style sidebar panel with acquisition controls.
 
     Signals
     -------
@@ -66,7 +84,7 @@ class ControlPanel(QWidget):
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setFixedWidth(280)
+        self.setFixedWidth(264)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding)
         self._is_recording = False
         self._setup_ui()
@@ -75,61 +93,74 @@ class ControlPanel(QWidget):
 
     def _setup_ui(self) -> None:
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(12, 16, 12, 16)
-        layout.setSpacing(12)
+        layout.setContentsMargins(10, 12, 10, 10)
+        layout.setSpacing(8)
 
-        # ── Title ─────────────────────────────────────────────────────── #
-        title = QLabel("ECG Acquisition")
+        # ── Header ────────────────────────────────────────────────────── #
+        title = QLabel("ECG ACQUISITION")
         title.setObjectName("title")
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(title)
 
-        subtitle = QLabel("cDAQ-9171 · 24 Channels")
-        subtitle.setObjectName("subtitle")
-        subtitle.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(subtitle)
+        device_lbl = QLabel("cDAQ-9171  |  24 CH")
+        device_lbl.setObjectName("subtitle")
+        device_lbl.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        layout.addWidget(device_lbl)
 
-        layout.addSpacing(8)
+        layout.addWidget(_make_separator())
 
         # ── Status indicator ──────────────────────────────────────────── #
-        self._status_label = QLabel("● Idle")
+        status_group = QGroupBox("STATUS")
+        status_layout = QVBoxLayout(status_group)
+        status_layout.setSpacing(4)
+
+        self._status_label = QLabel("IDLE")
         self._status_label.setObjectName("status")
         self._status_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(self._status_label)
+        self._status_label.setStyleSheet(
+            f"border-left: 3px solid {LED_IDLE}; color: {LED_IDLE};"
+        )
+        status_layout.addWidget(self._status_label)
 
-        layout.addSpacing(8)
+        layout.addWidget(status_group)
 
         # ── Acquisition controls ──────────────────────────────────────── #
-        acq_group = QGroupBox("Aquisição")
+        acq_group = QGroupBox("CONTROL")
         acq_layout = QVBoxLayout(acq_group)
-        acq_layout.setSpacing(8)
+        acq_layout.setSpacing(6)
 
-        self._btn_start = QPushButton("▶  Iniciar")
+        # Start / Stop in a row
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(4)
+
+        self._btn_start = QPushButton("START")
         self._btn_start.setObjectName("btn_start")
         self._btn_start.clicked.connect(self.start_clicked.emit)
-        acq_layout.addWidget(self._btn_start)
+        btn_row.addWidget(self._btn_start)
 
-        self._btn_stop = QPushButton("■  Parar")
+        self._btn_stop = QPushButton("STOP")
         self._btn_stop.setObjectName("btn_stop")
         self._btn_stop.setEnabled(False)
         self._btn_stop.clicked.connect(self.stop_clicked.emit)
-        acq_layout.addWidget(self._btn_stop)
+        btn_row.addWidget(self._btn_stop)
+
+        acq_layout.addLayout(btn_row)
 
         layout.addWidget(acq_group)
 
         # ── Recording controls ────────────────────────────────────────── #
-        rec_group = QGroupBox("Gravação")
+        rec_group = QGroupBox("RECORDING")
         rec_layout = QVBoxLayout(rec_group)
-        rec_layout.setSpacing(8)
+        rec_layout.setSpacing(6)
 
-        self._btn_record = QPushButton("⏺  Gravar TDMS")
+        self._btn_record = QPushButton("REC  TDMS")
         self._btn_record.setObjectName("btn_record")
         self._btn_record.setCheckable(True)
         self._btn_record.setEnabled(False)
         self._btn_record.toggled.connect(self._on_record_toggled)
         rec_layout.addWidget(self._btn_record)
 
-        self._btn_export = QPushButton("📁  Exportar CSV/Excel")
+        self._btn_export = QPushButton("EXPORT DATA")
         self._btn_export.setEnabled(False)
         self._btn_export.clicked.connect(self.export_clicked.emit)
         rec_layout.addWidget(self._btn_export)
@@ -137,39 +168,41 @@ class ControlPanel(QWidget):
         layout.addWidget(rec_group)
 
         # ── Quick settings ────────────────────────────────────────────── #
-        quick_group = QGroupBox("Acesso Rápido")
-        quick_layout = QFormLayout(quick_group)
-        quick_layout.setSpacing(8)
+        param_group = QGroupBox("PARAMETERS")
+        param_layout = QFormLayout(param_group)
+        param_layout.setSpacing(6)
+        param_layout.setLabelAlignment(Qt.AlignmentFlag.AlignRight)
 
         self._spin_sample_rate = QDoubleSpinBox()
         self._spin_sample_rate.setRange(100.0, 51200.0)
         self._spin_sample_rate.setValue(1000.0)
-        self._spin_sample_rate.setSuffix(" Hz")
+        self._spin_sample_rate.setSuffix("  Hz")
         self._spin_sample_rate.setDecimals(0)
         self._spin_sample_rate.valueChanged.connect(self.sample_rate_changed.emit)
-        quick_layout.addRow("Sample Rate:", self._spin_sample_rate)
+        param_layout.addRow("RATE:", self._spin_sample_rate)
 
         self._spin_window = QDoubleSpinBox()
         self._spin_window.setRange(1.0, 30.0)
         self._spin_window.setValue(5.0)
-        self._spin_window.setSuffix(" s")
+        self._spin_window.setSuffix("  s")
         self._spin_window.setDecimals(1)
         self._spin_window.setSingleStep(0.5)
         self._spin_window.valueChanged.connect(self.window_seconds_changed.emit)
-        quick_layout.addRow("Janela:", self._spin_window)
+        param_layout.addRow("WINDOW:", self._spin_window)
 
-        layout.addWidget(quick_group)
+        layout.addWidget(param_group)
 
         # ── Settings button ───────────────────────────────────────────── #
-        self._btn_settings = QPushButton("⚙  Configurações")
+        self._btn_settings = QPushButton("SETTINGS")
         self._btn_settings.clicked.connect(self.settings_clicked.emit)
         layout.addWidget(self._btn_settings)
 
-        # ── Stretch to push everything to top ─────────────────────────── #
+        # ── Stretch ───────────────────────────────────────────────────── #
         layout.addStretch()
 
-        # ── Footer info ───────────────────────────────────────────────── #
-        footer = QLabel("OPM NI Acquisition v0.1")
+        # ── Footer ────────────────────────────────────────────────────── #
+        layout.addWidget(_make_separator())
+        footer = QLabel("OPM-NI-ACQUISITION  v0.1")
         footer.setObjectName("subtitle")
         footer.setAlignment(Qt.AlignmentFlag.AlignCenter)
         layout.addWidget(footer)
@@ -179,9 +212,9 @@ class ControlPanel(QWidget):
     def _on_record_toggled(self, checked: bool) -> None:
         self._is_recording = checked
         if checked:
-            self._btn_record.setText("⏹  Parar Gravação")
+            self._btn_record.setText("STOP REC")
         else:
-            self._btn_record.setText("⏺  Gravar TDMS")
+            self._btn_record.setText("REC  TDMS")
         self.save_toggled.emit(checked)
 
     # ── Public methods for MainWindow to update state ─────────────────── #
@@ -200,26 +233,25 @@ class ControlPanel(QWidget):
                 self._btn_record.setChecked(False)
 
     def set_status(self, text: str, level: str = "info") -> None:
-        """Update the status label.
+        """Update the status label with LED-style left border.
 
         Parameters
         ----------
         text : str
-            Status message.
+            Status message (displayed uppercase).
         level : str
             One of ``"info"``, ``"success"``, ``"warning"``, ``"error"``.
         """
         color_map = {
-            "info": ACCENT_INFO,
-            "success": ACCENT_SUCCESS,
-            "warning": ACCENT_WARNING,
-            "error": ACCENT_DANGER,
+            "info": LED_IDLE,
+            "success": LED_RUNNING,
+            "warning": LED_RECORDING,
+            "error": LED_ERROR,
         }
-        color = color_map.get(level, ACCENT_INFO)
-        self._status_label.setText(f"● {text}")
+        color = color_map.get(level, LED_IDLE)
+        self._status_label.setText(text.upper())
         self._status_label.setStyleSheet(
-            f"color: {color}; border: 1px solid {color}40; "
-            f"background-color: {color}15;"
+            f"border-left: 3px solid {color}; color: {color};"
         )
 
     def get_sample_rate(self) -> float:

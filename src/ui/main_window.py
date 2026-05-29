@@ -38,24 +38,24 @@ logger = logging.getLogger(__name__)
 
 
 class MainWindow(QMainWindow):
-    """Primary application window — orchestrates all subsystems.
+    """Primary application window -- orchestrates all subsystems.
 
     Layout::
 
-        ┌─────────────────────────────────────────────────────────┐
-        │  ControlPanel (fixed 280px)  │   ChartWidget (stretch)  │
-        │  ─────────────────────────   │   ────────────────────── │
-        │  [▶ Start] [■ Stop]          │   24× rolling waveforms  │
-        │  [⏺ Record] [📁 Export]     │                          │
-        │  Sample Rate: [____] Hz      │                          │
-        │  Window:      [____] s       │                          │
-        │  [⚙ Settings]               │                          │
-        └─────────────────────────────────────────────────────────┘
+        +----------------------------+-----------------------------+
+        |  ControlPanel (264px)      |   ChartWidget (stretch)     |
+        |  ~~~~~~~~~~~~~~~~~~~~~~~~  |   ~~~~~~~~~~~~~~~~~~~~~~~~~ |
+        |  [START] [STOP]            |   24x rolling waveforms     |
+        |  [REC TDMS] [EXPORT DATA]  |                             |
+        |  RATE: [____] Hz           |                             |
+        |  WINDOW: [____] s          |                             |
+        |  [SETTINGS]                |                             |
+        +----------------------------+-----------------------------+
     """
 
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("OPM ECG Acquisition — cDAQ-9171 · 24 Channels")
+        self.setWindowTitle("OPM ECG Acquisition  --  cDAQ-9171  |  24 Channels")
         self.setMinimumSize(1200, 700)
 
         # ── State ─────────────────────────────────────────────────────── #
@@ -78,7 +78,7 @@ class MainWindow(QMainWindow):
         # ── Status bar ────────────────────────────────────────────────── #
         self._statusbar = QStatusBar()
         self.setStatusBar(self._statusbar)
-        self._statusbar.showMessage("Pronto.")
+        self._statusbar.showMessage("READY")
 
     # ── UI Construction ───────────────────────────────────────────────── #
 
@@ -107,7 +107,7 @@ class MainWindow(QMainWindow):
         # Splitter proportions (control panel stays narrow).
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
-        splitter.setSizes([280, 920])
+        splitter.setSizes([264, 936])
 
         layout.addWidget(splitter)
 
@@ -145,15 +145,16 @@ class MainWindow(QMainWindow):
             self._daq_worker.start()
 
             self._control_panel.set_acquiring(True)
-            self._control_panel.set_status("Adquirindo…", "success")
+            self._control_panel.set_status("ACQUIRING", "success")
             self._statusbar.showMessage(
                 f"DAQ: {self._daq_config.device_name} @ "
-                f"{self._daq_config.sample_rate:.0f} Hz"
+                f"{self._daq_config.sample_rate:.0f} Hz  |  "
+                f"{self._daq_config.num_channels} CH"
             )
             logger.info("Acquisition started.")
 
         except Exception as exc:
-            QMessageBox.critical(self, "Erro ao iniciar", str(exc))
+            QMessageBox.critical(self, "DAQ Error", str(exc))
             logger.exception("Failed to start acquisition")
 
     def _stop_acquisition(self) -> None:
@@ -162,8 +163,8 @@ class MainWindow(QMainWindow):
             self._daq_worker.stop()
             self._daq_worker.wait(5000)  # wait up to 5s for thread to finish
         self._control_panel.set_acquiring(False)
-        self._control_panel.set_status("Parado", "info")
-        self._statusbar.showMessage("Aquisição encerrada.")
+        self._control_panel.set_status("STOPPED", "info")
+        self._statusbar.showMessage("Acquisition stopped.")
         logger.info("Acquisition stopped.")
 
     # ── Data flow (Signal / Slot) ─────────────────────────────────────── #
@@ -195,9 +196,9 @@ class MainWindow(QMainWindow):
 
     def _on_daq_error(self, message: str) -> None:
         """Slot: handle DAQ errors."""
-        self._control_panel.set_status("Erro DAQ", "error")
-        self._statusbar.showMessage(f"ERRO: {message}")
-        QMessageBox.warning(self, "Erro de Aquisição", message)
+        self._control_panel.set_status("DAQ ERROR", "error")
+        self._statusbar.showMessage(f"ERROR: {message}")
+        QMessageBox.warning(self, "DAQ Error", message)
         logger.error("DAQ error: %s", message)
 
     def _on_daq_status(self, status: str) -> None:
@@ -224,12 +225,12 @@ class MainWindow(QMainWindow):
                 channel_names=self._daq_config.channel_names,
                 sample_rate=self._daq_config.sample_rate,
             )
-            self._control_panel.set_status("Salvando…", "warning")
-            self._statusbar.showMessage(f"Gravando → {filepath}")
+            self._control_panel.set_status("RECORDING", "warning")
+            self._statusbar.showMessage(f"Recording to: {filepath}")
         else:
             self._recorder.stop()
-            self._control_panel.set_status("Adquirindo…", "success")
-            self._statusbar.showMessage("Gravação encerrada.")
+            self._control_panel.set_status("ACQUIRING", "success")
+            self._statusbar.showMessage("Recording stopped.")
 
     # ── Export ─────────────────────────────────────────────────────────── #
 
@@ -237,7 +238,7 @@ class MainWindow(QMainWindow):
         """Export the accumulated data buffer to CSV or Excel."""
         if not self._export_buffer:
             QMessageBox.information(
-                self, "Sem dados", "Nenhum dado disponível para exportar."
+                self, "No Data", "No data available for export."
             )
             return
 
@@ -246,7 +247,7 @@ class MainWindow(QMainWindow):
 
         filepath, selected_filter = QFileDialog.getSaveFileName(
             self,
-            "Exportar Dados",
+            "Export Data",
             f"ecg_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             "CSV (*.csv);;Excel (*.xlsx)",
         )
@@ -263,14 +264,14 @@ class MainWindow(QMainWindow):
             else:
                 self._exporter.to_csv(full_data, path, names, sr)
 
-            self._statusbar.showMessage(f"Exportado → {path}")
+            self._statusbar.showMessage(f"Exported: {path}")
             QMessageBox.information(
                 self,
-                "Exportação concluída",
-                f"Dados exportados com sucesso para:\n{path}",
+                "Export Complete",
+                f"Data exported to:\n{path}",
             )
         except Exception as exc:
-            QMessageBox.critical(self, "Erro de exportação", str(exc))
+            QMessageBox.critical(self, "Export Error", str(exc))
             logger.exception("Export failed")
 
     # ── Settings ──────────────────────────────────────────────────────── #
@@ -289,7 +290,7 @@ class MainWindow(QMainWindow):
             # Rebuild processor with new filter settings.
             self._rebuild_processor()
 
-            self._statusbar.showMessage("Configurações atualizadas.")
+            self._statusbar.showMessage("Settings updated.")
             logger.info("Settings updated via dialog.")
 
     def _on_sample_rate_changed(self, rate: float) -> None:

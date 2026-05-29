@@ -1,80 +1,92 @@
 """Application-wide visual theme, QSS styles, and colour constants.
 
-Implements a premium dark theme with a medical-grade aesthetic suitable
-for a clinical ECG monitoring application.
+Implements a professional instrumentation theme inspired by LabVIEW,
+NI SignalExpress, and scientific data-acquisition software.  Emphasises
+readability, clear hierarchy, and a utilitarian aesthetic over
+decorative elements.
 """
 
 from __future__ import annotations
 
-# ── Colour Palette ───────────────────────────────────────────────────────── #
+# ── Colour Palette (Instrumentation / Industrial) ────────────────────────── #
 
-# Primary surface colours (dark mode)
-BG_DARKEST = "#0D0F14"       # Window / main background
-BG_DARK = "#141821"          # Panel / sidebar background
-BG_CARD = "#1A1F2E"          # Card / widget background
-BG_HOVER = "#232A3A"         # Hover state
-BG_INPUT = "#1E2433"         # Input field background
-BORDER = "#2A3144"           # Subtle borders
-BORDER_FOCUS = "#4A7DFF"     # Focus ring
+# Surface colours — steel-gray gradient
+BG_DARKEST = "#1B1D23"       # Main window background
+BG_DARK = "#22252D"          # Sidebar / panel background
+BG_CARD = "#282C34"          # Card / group box background
+BG_HOVER = "#2F3440"         # Hover state
+BG_INPUT = "#1E2128"         # Input field background
+BG_HEADER = "#1F2229"        # Header / toolbar background
+BORDER = "#383D47"           # Standard border
+BORDER_LIGHT = "#434956"     # Lighter border for inner elements
+BORDER_FOCUS = "#5B9BD5"     # Focus ring (instrument blue)
 
-# Accent colours
-ACCENT_PRIMARY = "#4A7DFF"   # Primary blue accent
-ACCENT_SUCCESS = "#22C55E"   # Green — recording / active
-ACCENT_WARNING = "#F59E0B"   # Amber — caution
-ACCENT_DANGER = "#EF4444"    # Red — stop / error
-ACCENT_INFO = "#38BDF8"      # Light blue — info
+# Accent colours — functional, not decorative
+ACCENT_PRIMARY = "#5B9BD5"   # Instrument blue (NI-style)
+ACCENT_ACTIVE = "#3D8B37"    # Operational green (LED on)
+ACCENT_RECORD = "#C0392B"    # Recording red
+ACCENT_WARNING = "#D4A017"   # Caution amber
+ACCENT_INFO = "#5B9BD5"      # Same as primary — informational
 
 # Text colours
-TEXT_PRIMARY = "#E2E8F0"     # Main text
-TEXT_SECONDARY = "#94A3B8"   # Secondary / muted text
-TEXT_DISABLED = "#475569"    # Disabled text
+TEXT_PRIMARY = "#D4D7DD"     # Main text (high contrast on dark)
+TEXT_SECONDARY = "#8B9099"   # Labels, secondary info
+TEXT_DISABLED = "#555A63"    # Disabled elements
+TEXT_BRIGHT = "#EBEDF0"     # Emphasized / active text
+TEXT_DATA = "#A8D8A8"        # Data readout (greenish, oscilloscope-style)
 
-# ── Channel colour palette (24 distinct colours) ────────────────────────── #
+# LED indicator colours (for status)
+LED_OFF = "#3A3E47"
+LED_IDLE = "#5B9BD5"
+LED_RUNNING = "#3D8B37"
+LED_RECORDING = "#C0392B"
+LED_ERROR = "#E74C3C"
+
+# ── Channel colour palette (24 distinct, muted scientific tones) ─────────── #
 
 CHANNEL_COLORS: list[str] = [
-    "#FF6B6B",  # 1  – Coral red
-    "#4ECDC4",  # 2  – Teal
-    "#45B7D1",  # 3  – Sky blue
-    "#96CEB4",  # 4  – Sage green
-    "#FFEAA7",  # 5  – Pale gold
-    "#DDA0DD",  # 6  – Plum
-    "#98D8C8",  # 7  – Mint
-    "#F7DC6F",  # 8  – Sunflower
-    "#BB8FCE",  # 9  – Lavender
-    "#85C1E9",  # 10 – Powder blue
-    "#F8C471",  # 11 – Sandy
-    "#82E0AA",  # 12 – Emerald
-    "#F1948A",  # 13 – Salmon
-    "#AED6F1",  # 14 – Ice blue
-    "#D7BDE2",  # 15 – Lilac
-    "#A3E4D7",  # 16 – Aquamarine
-    "#FAD7A0",  # 17 – Peach
-    "#A9CCE3",  # 18 – Cerulean
-    "#D5F5E3",  # 19 – Pale green
-    "#FADBD8",  # 20 – Rose
-    "#D4E6F1",  # 21 – Periwinkle
-    "#E8DAEF",  # 22 – Thistle
-    "#D1F2EB",  # 23 – Sea foam
-    "#FCF3CF",  # 24 – Cream
+    "#5B9BD5",  # 1  — Steel blue
+    "#70AD47",  # 2  — Olive green
+    "#ED7D31",  # 3  — Burnt orange
+    "#FFC000",  # 4  — Amber
+    "#44546A",  # 5  — Slate
+    "#A5A5A5",  # 6  — Silver
+    "#4472C4",  # 7  — Cobalt
+    "#C55A11",  # 8  — Rust
+    "#7030A0",  # 9  — Deep purple
+    "#00B0F0",  # 10 — Cyan
+    "#92D050",  # 11 — Lime
+    "#FF6F61",  # 12 — Coral
+    "#4EA6DC",  # 13 — Sky
+    "#BF8F00",  # 14 — Dark gold
+    "#548235",  # 15 — Forest
+    "#C45911",  # 16 — Copper
+    "#2E75B6",  # 17 — Ocean
+    "#A9D18E",  # 18 — Sage
+    "#F4B183",  # 19 — Peach
+    "#8FAADC",  # 20 — Periwinkle
+    "#D09A44",  # 21 — Bronze
+    "#2DC6B8",  # 22 — Teal
+    "#B4C7E7",  # 23 — Ice
+    "#E2C044",  # 24 — Mustard
 ]
 
 # ── Fonts ────────────────────────────────────────────────────────────────── #
 
-FONT_FAMILY = "Segoe UI, Inter, Roboto, sans-serif"
+FONT_FAMILY = "Segoe UI, Tahoma, Arial, sans-serif"
+FONT_MONO = "Consolas, Courier New, monospace"
+FONT_SIZE_XS = "10px"
 FONT_SIZE_SM = "11px"
-FONT_SIZE_MD = "13px"
-FONT_SIZE_LG = "16px"
-FONT_SIZE_XL = "20px"
-FONT_SIZE_TITLE = "24px"
+FONT_SIZE_MD = "12px"
+FONT_SIZE_LG = "14px"
+FONT_SIZE_XL = "16px"
+FONT_SIZE_TITLE = "15px"
 
 # ── Spacing & Radius ────────────────────────────────────────────────────── #
 
-RADIUS_SM = "4px"
-RADIUS_MD = "8px"
-RADIUS_LG = "12px"
-SPACING_SM = "6px"
-SPACING_MD = "12px"
-SPACING_LG = "20px"
+RADIUS_SM = "2px"
+RADIUS_MD = "3px"
+RADIUS_LG = "4px"
 
 # ── QSS Stylesheet ──────────────────────────────────────────────────────── #
 
@@ -99,22 +111,36 @@ QLabel {{
 
 QLabel#title {{
     font-size: {FONT_SIZE_TITLE};
-    font-weight: 700;
-    color: {TEXT_PRIMARY};
+    font-weight: 600;
+    color: {TEXT_BRIGHT};
+    letter-spacing: 1px;
+    text-transform: uppercase;
 }}
 
 QLabel#subtitle {{
-    font-size: {FONT_SIZE_MD};
+    font-size: {FONT_SIZE_SM};
     color: {TEXT_SECONDARY};
+    font-family: {FONT_MONO};
 }}
 
 QLabel#status {{
-    font-size: {FONT_SIZE_LG};
+    font-size: {FONT_SIZE_MD};
     font-weight: 600;
-    padding: 8px 16px;
-    border-radius: {RADIUS_MD};
+    font-family: {FONT_MONO};
+    padding: 6px 12px;
+    border-radius: {RADIUS_SM};
     background-color: {BG_CARD};
     border: 1px solid {BORDER};
+    border-left: 3px solid {ACCENT_PRIMARY};
+}}
+
+QLabel#readout {{
+    font-family: {FONT_MONO};
+    font-size: {FONT_SIZE_MD};
+    color: {TEXT_DATA};
+    background-color: {BG_INPUT};
+    border: 1px solid {BORDER};
+    padding: 4px 8px;
 }}
 
 /* ── Push Buttons ─────────────────────────────────────────────────────── */
@@ -122,21 +148,24 @@ QPushButton {{
     background-color: {BG_CARD};
     color: {TEXT_PRIMARY};
     border: 1px solid {BORDER};
-    border-radius: {RADIUS_MD};
-    padding: 10px 20px;
+    border-radius: {RADIUS_SM};
+    padding: 6px 14px;
     font-size: {FONT_SIZE_MD};
     font-weight: 600;
-    min-height: 20px;
+    min-height: 22px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }}
 
 QPushButton:hover {{
     background-color: {BG_HOVER};
-    border-color: {ACCENT_PRIMARY};
+    border-color: {BORDER_LIGHT};
 }}
 
 QPushButton:pressed {{
     background-color: {ACCENT_PRIMARY};
-    color: white;
+    color: {TEXT_BRIGHT};
+    border-color: {ACCENT_PRIMARY};
 }}
 
 QPushButton:disabled {{
@@ -146,48 +175,95 @@ QPushButton:disabled {{
 }}
 
 QPushButton#btn_start {{
-    background-color: {ACCENT_PRIMARY};
-    color: white;
-    border: none;
+    background-color: #2D5F2D;
+    color: #B8E6B8;
+    border: 1px solid #3D8B37;
 }}
 
 QPushButton#btn_start:hover {{
-    background-color: #5A8AFF;
+    background-color: #357A35;
+    color: {TEXT_BRIGHT};
+}}
+
+QPushButton#btn_start:disabled {{
+    background-color: {BG_DARK};
+    color: {TEXT_DISABLED};
+    border-color: {BG_DARK};
 }}
 
 QPushButton#btn_stop {{
-    background-color: {ACCENT_DANGER};
-    color: white;
-    border: none;
+    background-color: #5C2020;
+    color: #E8A0A0;
+    border: 1px solid #8B3030;
 }}
 
 QPushButton#btn_stop:hover {{
-    background-color: #F87171;
+    background-color: #7A2D2D;
+    color: {TEXT_BRIGHT};
+}}
+
+QPushButton#btn_stop:disabled {{
+    background-color: {BG_DARK};
+    color: {TEXT_DISABLED};
+    border-color: {BG_DARK};
 }}
 
 QPushButton#btn_record {{
     background-color: {BG_CARD};
-    color: {ACCENT_SUCCESS};
-    border: 1px solid {ACCENT_SUCCESS};
+    color: {TEXT_PRIMARY};
+    border: 1px solid {BORDER};
 }}
 
 QPushButton#btn_record:checked {{
-    background-color: {ACCENT_SUCCESS};
-    color: white;
+    background-color: #5C2020;
+    color: #FF8080;
+    border: 1px solid {ACCENT_RECORD};
+}}
+
+QPushButton#btn_record:disabled {{
+    background-color: {BG_DARK};
+    color: {TEXT_DISABLED};
+    border-color: {BG_DARK};
 }}
 
 /* ── Spin Boxes / Line Edits ──────────────────────────────────────────── */
 QSpinBox, QDoubleSpinBox, QLineEdit {{
     background-color: {BG_INPUT};
-    color: {TEXT_PRIMARY};
+    color: {TEXT_DATA};
     border: 1px solid {BORDER};
     border-radius: {RADIUS_SM};
-    padding: 6px 10px;
+    padding: 4px 8px;
+    font-family: {FONT_MONO};
     font-size: {FONT_SIZE_MD};
+    selection-background-color: {ACCENT_PRIMARY};
 }}
 
 QSpinBox:focus, QDoubleSpinBox:focus, QLineEdit:focus {{
     border-color: {ACCENT_PRIMARY};
+}}
+
+QSpinBox:disabled, QDoubleSpinBox:disabled, QLineEdit:disabled {{
+    background-color: {BG_DARK};
+    color: {TEXT_DISABLED};
+    border-color: {BG_DARK};
+}}
+
+QSpinBox::up-button, QDoubleSpinBox::up-button {{
+    background-color: {BG_CARD};
+    border-left: 1px solid {BORDER};
+    border-bottom: 1px solid {BORDER};
+    width: 18px;
+}}
+
+QSpinBox::down-button, QDoubleSpinBox::down-button {{
+    background-color: {BG_CARD};
+    border-left: 1px solid {BORDER};
+    width: 18px;
+}}
+
+QSpinBox::up-button:hover, QDoubleSpinBox::up-button:hover,
+QSpinBox::down-button:hover, QDoubleSpinBox::down-button:hover {{
+    background-color: {BG_HOVER};
 }}
 
 /* ── Combo Boxes ──────────────────────────────────────────────────────── */
@@ -196,7 +272,7 @@ QComboBox {{
     color: {TEXT_PRIMARY};
     border: 1px solid {BORDER};
     border-radius: {RADIUS_SM};
-    padding: 6px 10px;
+    padding: 4px 8px;
     font-size: {FONT_SIZE_MD};
 }}
 
@@ -209,14 +285,21 @@ QComboBox QAbstractItemView {{
     color: {TEXT_PRIMARY};
     selection-background-color: {ACCENT_PRIMARY};
     border: 1px solid {BORDER};
+    outline: none;
+}}
+
+QComboBox::drop-down {{
+    background-color: {BG_CARD};
+    border-left: 1px solid {BORDER};
+    width: 20px;
 }}
 
 /* ── Tab Widget ───────────────────────────────────────────────────────── */
 QTabWidget::pane {{
     background-color: {BG_CARD};
     border: 1px solid {BORDER};
-    border-radius: {RADIUS_MD};
-    padding: 12px;
+    padding: 10px;
+    margin-top: -1px;
 }}
 
 QTabBar::tab {{
@@ -224,18 +307,18 @@ QTabBar::tab {{
     color: {TEXT_SECONDARY};
     border: 1px solid {BORDER};
     border-bottom: none;
-    border-top-left-radius: {RADIUS_SM};
-    border-top-right-radius: {RADIUS_SM};
-    padding: 8px 18px;
-    margin-right: 2px;
+    padding: 6px 16px;
+    margin-right: 1px;
+    font-size: {FONT_SIZE_SM};
     font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }}
 
 QTabBar::tab:selected {{
     background-color: {BG_CARD};
-    color: {ACCENT_PRIMARY};
-    border-color: {ACCENT_PRIMARY};
-    border-bottom: 2px solid {BG_CARD};
+    color: {TEXT_BRIGHT};
+    border-bottom: 2px solid {ACCENT_PRIMARY};
 }}
 
 QTabBar::tab:hover:!selected {{
@@ -245,15 +328,16 @@ QTabBar::tab:hover:!selected {{
 
 /* ── Check Boxes ──────────────────────────────────────────────────────── */
 QCheckBox {{
-    spacing: 8px;
+    spacing: 6px;
     background: transparent;
+    font-size: {FONT_SIZE_MD};
 }}
 
 QCheckBox::indicator {{
-    width: 18px;
-    height: 18px;
+    width: 14px;
+    height: 14px;
     border-radius: {RADIUS_SM};
-    border: 2px solid {BORDER};
+    border: 1px solid {BORDER_LIGHT};
     background-color: {BG_INPUT};
 }}
 
@@ -266,36 +350,37 @@ QCheckBox::indicator:checked {{
 QGroupBox {{
     background-color: {BG_CARD};
     border: 1px solid {BORDER};
-    border-radius: {RADIUS_MD};
-    margin-top: 16px;
-    padding: 16px;
-    padding-top: 28px;
+    border-radius: {RADIUS_SM};
+    margin-top: 14px;
+    padding: 12px;
+    padding-top: 24px;
     font-weight: 600;
+    font-size: {FONT_SIZE_SM};
 }}
 
 QGroupBox::title {{
     subcontrol-origin: margin;
     subcontrol-position: top left;
-    padding: 4px 12px;
-    color: {ACCENT_PRIMARY};
-    font-size: {FONT_SIZE_MD};
+    padding: 2px 8px;
+    color: {TEXT_SECONDARY};
+    font-size: {FONT_SIZE_SM};
+    text-transform: uppercase;
+    letter-spacing: 1px;
 }}
 
 /* ── Scroll Bars ──────────────────────────────────────────────────────── */
 QScrollBar:vertical {{
     background: {BG_DARK};
     width: 8px;
-    border-radius: 4px;
 }}
 
 QScrollBar::handle:vertical {{
     background: {BORDER};
-    border-radius: 4px;
     min-height: 30px;
 }}
 
 QScrollBar::handle:vertical:hover {{
-    background: {TEXT_DISABLED};
+    background: {BORDER_LIGHT};
 }}
 
 QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {{
@@ -310,7 +395,7 @@ QDialog {{
 /* ── Splitter ─────────────────────────────────────────────────────────── */
 QSplitter::handle {{
     background-color: {BORDER};
-    width: 2px;
+    width: 1px;
 }}
 
 QSplitter::handle:hover {{
@@ -319,10 +404,26 @@ QSplitter::handle:hover {{
 
 /* ── Status Bar ───────────────────────────────────────────────────────── */
 QStatusBar {{
-    background-color: {BG_DARK};
+    background-color: {BG_HEADER};
     color: {TEXT_SECONDARY};
     border-top: 1px solid {BORDER};
+    font-family: {FONT_MONO};
+    font-size: {FONT_SIZE_XS};
+    padding: 2px 8px;
+}}
+
+/* ── Separator lines ──────────────────────────────────────────────────── */
+QFrame#separator {{
+    background-color: {BORDER};
+    max-height: 1px;
+    margin: 4px 0px;
+}}
+
+/* ── Form labels ──────────────────────────────────────────────────────── */
+QFormLayout QLabel {{
     font-size: {FONT_SIZE_SM};
-    padding: 4px;
+    color: {TEXT_SECONDARY};
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }}
 """

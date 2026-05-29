@@ -1,69 +1,69 @@
-# OPM ECG Acquisition — 24-Channel System
+# OPM ECG Acquisition -- 24-Channel System
 
-> Migração do VI LabVIEW `AM-24 chan-convert_TDMS - ECG.vi` para Python.
+> Migrated from LabVIEW VI: `AM-24 chan-convert_TDMS - ECG.vi`
 
-Sistema de aquisição de ECG de 24 canais em tempo real usando National Instruments cDAQ-9171. Interface desktop com visualização de alta performance, processamento digital de sinais e gravação em TDMS.
+Real-time 24-channel ECG acquisition system using National Instruments cDAQ-9171. Desktop application with high-performance waveform visualization, digital signal conditioning, and TDMS recording.
 
-## 🏗️ Arquitetura
+## Architecture
 
 ```
 src/
-├── hardware/          # DAQ config + QThread worker (nidaqmx)
-├── processing/        # Filtros IIR (Notch 60Hz + Bandpass 2-50Hz)
-├── data/              # TDMS recorder + CSV/Excel exporter
-└── ui/                # PyQt6 interface (MainWindow, ChartWidget, ControlPanel, Settings)
+├── hardware/          DAQ configuration + QThread worker (nidaqmx)
+├── processing/        IIR filters (Notch 60 Hz + Bandpass 2-50 Hz)
+├── data/              TDMS recorder + CSV/Excel exporter
+└── ui/                PyQt6 interface (MainWindow, ChartWidget, ControlPanel, Settings)
 ```
 
-**Padrão MVC** com separação clara de responsabilidades:
+**MVC Pattern** with clear separation of concerns:
 - **Model:** `DaqConfig`, `EcgProcessor`, `TdmsRecorder`, `DataExporter`
 - **View:** `ChartWidget`, `ControlPanel`, `SettingsDialog`
 - **Controller:** `MainWindow`
 
-**Multithreading:** `DaqWorker(QThread)` executa leitura do hardware em thread separada, comunicando via `Signal/Slot` do Qt.
+**Multithreading:** `DaqWorker(QThread)` runs hardware I/O in a dedicated thread, communicating via Qt Signal/Slot.
 
-## ⚡ Stack Tecnológico
+## Tech Stack
 
-| Componente | Biblioteca |
-|-----------|-----------|
+| Component | Library |
+|-----------|---------|
 | GUI | PyQt6 |
-| Gráficos | pyqtgraph (24 canais em tempo real) |
+| Waveforms | pyqtgraph (24 channels, real-time) |
 | DAQ | nidaqmx (NI cDAQ-9171) |
-| Processamento | scipy.signal + numpy |
-| Armazenamento | nptdms (TDMS) + pandas (CSV/Excel) |
+| DSP | scipy.signal + numpy |
+| Storage | nptdms (TDMS) + pandas (CSV/Excel) |
 
-## 🔬 Pipeline de Filtros
+## Filter Pipeline
 
-1. **Notch Filter** — IIR Butterworth Bandstop, ordem 2, 59–61 Hz (rejeição 60 Hz)
-2. **Bandpass Filter** — IIR Butterworth Bandpass, ordem 4, 2–50 Hz
+1. **Notch Filter** -- IIR Butterworth Bandstop, order 2, 59-61 Hz (60 Hz rejection)
+2. **Bandpass Filter** -- IIR Butterworth Bandpass, order 4, 2-50 Hz
 
-Ambos usam representação SOS (Second-Order Sections) com estado mantido para filtragem contínua em streaming.
+Both use SOS (Second-Order Sections) representation with maintained state for continuous streaming.
 
-## 🚀 Setup
+## Setup
 
 ```bash
-# Instalar dependências com uv
+# Install dependencies
 uv sync
 
-# Rodar a aplicação
+# Run the application
 uv run python main.py
 
-# Rodar testes
+# Run tests
 uv run pytest tests/ -v
 ```
 
-## ⚙️ Configuração
+## Configuration
 
-Todos os parâmetros são configuráveis via **Settings Dialog** (`⚙ Configurações`):
+All parameters are configurable via the **Settings Dialog** (SETTINGS button):
 
-- **Hardware:** Device name, nº canais, terminal config, voltage range
-- **Aquisição:** Sample rate, samples per read, janela de visualização
-- **Filtros:** Ativar/desativar e configurar Notch e Bandpass
-- **Exportação:** Diretório de saída e formato padrão
+- **Hardware:** Device name, channel count, terminal config, voltage range
+- **Acquisition:** Sample rate, samples per read, display window
+- **Filters:** Enable/disable and configure Notch and Bandpass
+- **Export:** Output directory and default format
 
-Os parâmetros mais usados (sample rate e janela de visualização) ficam acessíveis diretamente no painel lateral.
+The most frequently used parameters (sample rate and display window) are also accessible directly from the control panel.
 
-## 📋 Requisitos de Hardware
+## Hardware Requirements
 
 - **Chassis:** NI cDAQ-9171 (USB, single-slot)
-- **Módulo AI:** Compatível com C Series (ex: NI-9205, NI-9215)
-- **Driver:** NI-DAQmx instalado e configurado via NI MAX
+- **AI Module:** Compatible C Series module (e.g. NI-9205, NI-9215)
+- **Driver:** NI-DAQmx installed and configured via NI MAX
