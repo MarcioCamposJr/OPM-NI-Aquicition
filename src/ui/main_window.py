@@ -1,0 +1,344 @@
+"""Main application window — the Controller in the MVC architecture.
+
+``MainWindow`` wires together:
+- ``DaqWorker`` (hardware, background thread)
+- ``EcgProcessor`` (signal processing)
+- ``TdmsRecorder`` / ``DataExporter`` (data persistence)
+- ``ChartWidget`` + ``ControlPanel`` + ``SettingsDialog`` (UI)
+"""
+
+from __future__ import annotations
+
+import logging
+from datetime import datetime
+from pathlib import Path
+
+import numpy as np
+from PyQt6.QtCore import Qt, QSettings
+from PyQt6.QtWidgets import (
+    QMainWindow,
+    QWidget,
+    QHBoxLayout,
+    QSplitter,
+    QStatusBar,
+    QFileDialog,
+    QMessageBox,
+)
+
+from src.hardware.daq_config import DaqConfig
+from src.hardware.daq_worker import DaqWorker
+from src.processing.ecg_processor import EcgProcessor
+from src.data.tdms_recorder import TdmsRecorder
+from src.data.exporter import DataExporter
+from src.ui.chart_widget import ChartWidget
+from src.ui.control_panel import ControlPanel
+from src.ui.settings_dialog import SettingsDialog
+
+logger = logging.getLogger(__name__)
+
+
+class MainWindow(QMainWindow):
+    """Primary application window — orchestrates all subsystems.
+
+    Layout::
+
+        ┌─────────────────────────────────────────────────────────┐
+        │  ControlPanel (fixed 280px)  │   ChartWidget (stretch)  │
+        │  ─────────────────────────   │   ────────────────────── │
+        │  [▶ Start] [■ Stop]          │   24× rolling waveforms  │
+        │  [⏺ Record] [📁 Export]     │                          │
+        │  Sample Rate: [____] Hz      │                          │
+        │  Window:      [____] s       │                          │
+        │  [⚙ Settings]               │                          │
+        └─────────────────────────────────────────────────────────┘
+    """
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.setWindowTitle("OPM ECG Acquisition — cDAQ-9171 · 24 Channels")
+        self.setMinimumSize(1200, 700)
+
+        # ── State ─────────────────────────────────────────────────────── #
+        self._daq_config = DaqConfig()
+        self._daq_worker: DaqWorker | None = None
+        self._processor: EcgProcessor | None = None
+        self._recorder = TdmsRecorder()
+        self._exporter = DataExporter()
+
+        # Accumulator for export (keeps filtered data while acquiring).
+        self._export_buffer: list[np.ndarray] = []
+
+        # ── Load persisted settings ───────────────────────────────────── #
+        self._apply_persisted_settings()
+
+        # ── UI construction ───────────────────────────────────────────── #
+        self._build_ui()
+        self._connect_signals()
+
+        # ── Status bar ────────────────────────────────────────────────── #
+        self._statusbar = QStatusBar()
+        self.setStatusBar(self._statusbar)
+        self._statusbar.showMessage("Pronto.")
+
+    # ── UI Construction ───────────────────────────────────────────────── #
+
+    def _build_ui(self) -> None:
+        central = QWidget()
+        self.setCentralWidget(central)
+        layout = QHBoxLayout(central)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        splitter = QSplitter(Qt.Orientation.Horizontal)
+
+        # Left: control panel
+        self._control_panel = ControlPanel()
+        self._control_panel.set_sample_rate(self._daq_config.sample_rate)
+        splitter.addWidget(self._control_panel)
+
+        # Right: chart grid
+        self._chart = ChartWidget(
+            num_channels=self._daq_config.num_channels,
+            sample_rate=self._daq_config.sample_rate,
+            window_seconds=self._control_panel.get_window_seconds(),
+        )
+        splitter.addWidget(self._chart)
+
+        # Splitter proportions (control panel stays narrow).
+        splitter.setStretchFactor(0, 0)
+        splitter.setStretchFactor(1, 1)
+        splitter.setSizes([280, 920])
+
+        layout.addWidget(splitter)
+
+    def _connect_signals(self) -> None:
+        cp = self._control_panel
+        cp.start_clicked.connect(self._start_acquisition)
+        cp.stop_clicked.connect(self._stop_acquisition)
+        cp.save_toggled.connect(self._toggle_recording)
+        cp.export_clicked.connect(self._export_data)
+        cp.settings_clicked.connect(self._open_settings)
+        cp.sample_rate_changed.connect(self._on_sample_rate_changed)
+        cp.window_seconds_changed.connect(self._on_window_changed)
+
+    # ── Acquisition start / stop ──────────────────────────────────────── #
+
+    def _start_acquisition(self) -> None:
+        """Create DaqWorker + EcgProcessor and begin reading."""
+        try:
+            # Apply quick-settings sample rate.
+            self._daq_config.sample_rate = self._control_panel.get_sample_rate()
+
+            # Rebuild processor with current filter settings.
+            self._rebuild_processor()
+
+            # Clear chart and export buffer.
+            self._chart.clear_data()
+            self._export_buffer.clear()
+
+            # Create and start DAQ worker.
+            self._daq_worker = DaqWorker(self._daq_config)
+            self._daq_worker.data_ready.connect(self._on_data_received)
+            self._daq_worker.error_occurred.connect(self._on_daq_error)
+            self._daq_worker.status_changed.connect(self._on_daq_status)
+            self._daq_worker.finished.connect(self._on_daq_finished)
+            self._daq_worker.start()
+
+            self._control_panel.set_acquiring(True)
+            self._control_panel.set_status("Adquirindo…", "success")
+            self._statusbar.showMessage(
+                f"DAQ: {self._daq_config.device_name} @ "
+                f"{self._daq_config.sample_rate:.0f} Hz"
+            )
+            logger.info("Acquisition started.")
+
+        except Exception as exc:
+            QMessageBox.critical(self, "Erro ao iniciar", str(exc))
+            logger.exception("Failed to start acquisition")
+
+    def _stop_acquisition(self) -> None:
+        """Stop the DaqWorker and clean up."""
+        if self._daq_worker is not None and self._daq_worker.is_running:
+            self._daq_worker.stop()
+            self._daq_worker.wait(5000)  # wait up to 5s for thread to finish
+        self._control_panel.set_acquiring(False)
+        self._control_panel.set_status("Parado", "info")
+        self._statusbar.showMessage("Aquisição encerrada.")
+        logger.info("Acquisition stopped.")
+
+    # ── Data flow (Signal / Slot) ─────────────────────────────────────── #
+
+    def _on_data_received(self, raw_data: np.ndarray) -> None:
+        """Slot: receives raw block from DaqWorker, processes, and displays."""
+        # 1. Filter
+        if self._processor is not None:
+            filtered = self._processor.process(raw_data)
+        else:
+            filtered = raw_data
+
+        # 2. Update chart
+        self._chart.update_data(filtered)
+
+        # 3. Record if active
+        if self._recorder.is_recording:
+            self._recorder.write(filtered)
+
+        # 4. Accumulate for potential export
+        self._export_buffer.append(filtered)
+
+        # Limit buffer to ~60 seconds to avoid unbounded memory usage.
+        max_blocks = int(
+            60 * self._daq_config.sample_rate / self._daq_config.samples_per_read
+        )
+        if len(self._export_buffer) > max_blocks:
+            self._export_buffer.pop(0)
+
+    def _on_daq_error(self, message: str) -> None:
+        """Slot: handle DAQ errors."""
+        self._control_panel.set_status("Erro DAQ", "error")
+        self._statusbar.showMessage(f"ERRO: {message}")
+        QMessageBox.warning(self, "Erro de Aquisição", message)
+        logger.error("DAQ error: %s", message)
+
+    def _on_daq_status(self, status: str) -> None:
+        """Slot: forward DAQ status changes."""
+        self._statusbar.showMessage(f"DAQ: {status}")
+
+    def _on_daq_finished(self) -> None:
+        """Slot: DaqWorker thread finished."""
+        self._control_panel.set_acquiring(False)
+        logger.info("DaqWorker thread finished.")
+
+    # ── Recording ─────────────────────────────────────────────────────── #
+
+    def _toggle_recording(self, active: bool) -> None:
+        """Start or stop TDMS recording."""
+        if active:
+            settings = QSettings("OPM", "ECG-Acquisition")
+            output_dir = settings.value("export/output_dir", ".")
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filepath = Path(output_dir) / f"ecg_recording_{timestamp}.tdms"
+
+            self._recorder.start(
+                filepath=filepath,
+                channel_names=self._daq_config.channel_names,
+                sample_rate=self._daq_config.sample_rate,
+            )
+            self._control_panel.set_status("Salvando…", "warning")
+            self._statusbar.showMessage(f"Gravando → {filepath}")
+        else:
+            self._recorder.stop()
+            self._control_panel.set_status("Adquirindo…", "success")
+            self._statusbar.showMessage("Gravação encerrada.")
+
+    # ── Export ─────────────────────────────────────────────────────────── #
+
+    def _export_data(self) -> None:
+        """Export the accumulated data buffer to CSV or Excel."""
+        if not self._export_buffer:
+            QMessageBox.information(
+                self, "Sem dados", "Nenhum dado disponível para exportar."
+            )
+            return
+
+        # Concatenate all buffered blocks.
+        full_data = np.concatenate(self._export_buffer, axis=1)
+
+        filepath, selected_filter = QFileDialog.getSaveFileName(
+            self,
+            "Exportar Dados",
+            f"ecg_export_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+            "CSV (*.csv);;Excel (*.xlsx)",
+        )
+        if not filepath:
+            return
+
+        try:
+            path = Path(filepath)
+            names = self._daq_config.channel_names
+            sr = self._daq_config.sample_rate
+
+            if path.suffix == ".xlsx":
+                self._exporter.to_excel(full_data, path, names, sr)
+            else:
+                self._exporter.to_csv(full_data, path, names, sr)
+
+            self._statusbar.showMessage(f"Exportado → {path}")
+            QMessageBox.information(
+                self,
+                "Exportação concluída",
+                f"Dados exportados com sucesso para:\n{path}",
+            )
+        except Exception as exc:
+            QMessageBox.critical(self, "Erro de exportação", str(exc))
+            logger.exception("Export failed")
+
+    # ── Settings ──────────────────────────────────────────────────────── #
+
+    def _open_settings(self) -> None:
+        """Open the settings dialog."""
+        dialog = SettingsDialog(daq_config=self._daq_config, parent=self)
+        if dialog.exec():
+            self._daq_config = dialog.get_daq_config()
+            self._control_panel.set_sample_rate(self._daq_config.sample_rate)
+
+            window_s = dialog.get_window_seconds()
+            self._control_panel.set_window_seconds(window_s)
+            self._chart.set_window_seconds(window_s)
+
+            # Rebuild processor with new filter settings.
+            self._rebuild_processor()
+
+            self._statusbar.showMessage("Configurações atualizadas.")
+            logger.info("Settings updated via dialog.")
+
+    def _on_sample_rate_changed(self, rate: float) -> None:
+        """Quick-settings: sample rate changed in ControlPanel."""
+        self._daq_config.sample_rate = rate
+
+    def _on_window_changed(self, seconds: float) -> None:
+        """Quick-settings: visualisation window changed."""
+        self._chart.set_window_seconds(seconds)
+
+    # ── Internal helpers ──────────────────────────────────────────────── #
+
+    def _rebuild_processor(self) -> None:
+        """Create a fresh EcgProcessor from current settings."""
+        settings = QSettings("OPM", "ECG-Acquisition")
+        self._processor = EcgProcessor(
+            sample_rate=self._daq_config.sample_rate,
+            num_channels=self._daq_config.num_channels,
+            notch_enabled=settings.value("filters/notch_enabled", True, type=bool),
+            bandpass_enabled=settings.value("filters/bp_enabled", True, type=bool),
+            notch_low=float(settings.value("filters/notch_low", 59.0)),
+            notch_high=float(settings.value("filters/notch_high", 61.0)),
+            notch_order=int(settings.value("filters/notch_order", 2)),
+            bp_low=float(settings.value("filters/bp_low", 2.0)),
+            bp_high=float(settings.value("filters/bp_high", 50.0)),
+            bp_order=int(settings.value("filters/bp_order", 4)),
+        )
+
+    def _apply_persisted_settings(self) -> None:
+        """Apply QSettings-persisted values to the DaqConfig at startup."""
+        s = QSettings("OPM", "ECG-Acquisition")
+        self._daq_config = DaqConfig(
+            device_name=s.value("hw/device", self._daq_config.device_name),
+            num_channels=int(s.value("hw/num_channels", self._daq_config.num_channels)),
+            channel_prefix=s.value("hw/prefix", self._daq_config.channel_prefix),
+            sample_rate=float(s.value("acq/sample_rate", self._daq_config.sample_rate)),
+            samples_per_read=int(s.value("acq/samples_per_read", self._daq_config.samples_per_read)),
+            min_voltage=float(s.value("hw/vmin", self._daq_config.min_voltage)),
+            max_voltage=float(s.value("hw/vmax", self._daq_config.max_voltage)),
+            terminal_config=s.value("hw/terminal", self._daq_config.terminal_config),
+        )
+
+    # ── Window lifecycle ──────────────────────────────────────────────── #
+
+    def closeEvent(self, event) -> None:
+        """Ensure clean shutdown of worker and recorder."""
+        if self._daq_worker is not None and self._daq_worker.is_running:
+            self._daq_worker.stop()
+            self._daq_worker.wait(3000)
+        if self._recorder.is_recording:
+            self._recorder.stop()
+        event.accept()
