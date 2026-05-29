@@ -103,7 +103,7 @@ class ChartWidget(QWidget):
             curve = plot.plot(
                 self._time_axis,
                 self._buffers[i],
-                pen=pg.mkPen(color=color, width=1.0),
+                pen=pg.mkPen(color=color, width=1.5),
             )
 
             self._plots.append(plot)
@@ -180,7 +180,7 @@ class ChartWidget(QWidget):
         plot.setXRange(0, self._window_seconds, padding=0)
 
         # Grid: subtle lines resembling oscilloscope graticule.
-        plot.showGrid(x=True, y=True, alpha=0.1)
+        plot.showGrid(x=True, y=True, alpha=0.2)
         plot.hideButtons()
         plot.setMenuEnabled(False)
 

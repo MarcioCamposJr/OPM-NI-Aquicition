@@ -11,14 +11,14 @@ from __future__ import annotations
 # ── Colour Palette (Instrumentation / Industrial) ────────────────────────── #
 
 # Surface colours — steel-gray gradient
-BG_DARKEST = "#1B1D23"       # Main window background
-BG_DARK = "#22252D"          # Sidebar / panel background
-BG_CARD = "#282C34"          # Card / group box background
+BG_DARKEST = "#14161A"       # Main window background (darker for contrast)
+BG_DARK = "#1F2229"          # Sidebar / panel background
+BG_CARD = "#2A2E38"          # Card / group box background
 BG_HOVER = "#2F3440"         # Hover state
 BG_INPUT = "#1E2128"         # Input field background
 BG_HEADER = "#1F2229"        # Header / toolbar background
-BORDER = "#383D47"           # Standard border
-BORDER_LIGHT = "#434956"     # Lighter border for inner elements
+BORDER = "#4A5263"           # Standard border (brighter)
+BORDER_LIGHT = "#5C657A"     # Lighter border for inner elements
 BORDER_FOCUS = "#5B9BD5"     # Focus ring (instrument blue)
 
 # Accent colours — functional, not decorative
@@ -29,9 +29,9 @@ ACCENT_WARNING = "#D4A017"   # Caution amber
 ACCENT_INFO = "#5B9BD5"      # Same as primary — informational
 
 # Text colours
-TEXT_PRIMARY = "#D4D7DD"     # Main text (high contrast on dark)
-TEXT_SECONDARY = "#8B9099"   # Labels, secondary info
-TEXT_DISABLED = "#555A63"    # Disabled elements
+TEXT_PRIMARY = "#F0F2F5"     # Main text (high contrast on dark)
+TEXT_SECONDARY = "#A9B1C2"   # Labels, secondary info (brighter)
+TEXT_DISABLED = "#70788A"    # Disabled elements (more visible)
 TEXT_BRIGHT = "#EBEDF0"     # Emphasized / active text
 TEXT_DATA = "#A8D8A8"        # Data readout (greenish, oscilloscope-style)
 
@@ -169,9 +169,9 @@ QPushButton:pressed {{
 }}
 
 QPushButton:disabled {{
-    background-color: {BG_DARK};
+    background-color: #20232A;
     color: {TEXT_DISABLED};
-    border-color: {BG_DARK};
+    border: 1px solid #303540;
 }}
 
 QPushButton#btn_start {{
@@ -186,9 +186,9 @@ QPushButton#btn_start:hover {{
 }}
 
 QPushButton#btn_start:disabled {{
-    background-color: {BG_DARK};
+    background-color: #1A2E1A;
     color: {TEXT_DISABLED};
-    border-color: {BG_DARK};
+    border: 1px solid #254025;
 }}
 
 QPushButton#btn_stop {{
@@ -203,9 +203,9 @@ QPushButton#btn_stop:hover {{
 }}
 
 QPushButton#btn_stop:disabled {{
-    background-color: {BG_DARK};
+    background-color: #2E1A1A;
     color: {TEXT_DISABLED};
-    border-color: {BG_DARK};
+    border: 1px solid #402525;
 }}
 
 QPushButton#btn_record {{
@@ -221,9 +221,9 @@ QPushButton#btn_record:checked {{
 }}
 
 QPushButton#btn_record:disabled {{
-    background-color: {BG_DARK};
+    background-color: #20232A;
     color: {TEXT_DISABLED};
-    border-color: {BG_DARK};
+    border: 1px solid #303540;
 }}
 
 /* ── Spin Boxes / Line Edits ──────────────────────────────────────────── */
@@ -362,10 +362,11 @@ QGroupBox::title {{
     subcontrol-origin: margin;
     subcontrol-position: top left;
     padding: 2px 8px;
-    color: {TEXT_SECONDARY};
+    color: {TEXT_PRIMARY};
     font-size: {FONT_SIZE_SM};
     text-transform: uppercase;
     letter-spacing: 1px;
+    background-color: {BG_CARD};
 }}
 
 /* ── Scroll Bars ──────────────────────────────────────────────────────── */
