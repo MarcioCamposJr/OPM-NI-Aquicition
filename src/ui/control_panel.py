@@ -79,6 +79,7 @@ class ControlPanel(QWidget):
     save_toggled = pyqtSignal(bool)
     export_clicked = pyqtSignal()
     settings_clicked = pyqtSignal()
+    ica_clicked = pyqtSignal()
     sample_rate_changed = pyqtSignal(float)
     window_seconds_changed = pyqtSignal(float)
 
@@ -167,6 +168,17 @@ class ControlPanel(QWidget):
         rec_layout.addWidget(self._btn_export)
 
         layout.addWidget(rec_group)
+        
+        # ── Analysis ──────────────────────────────────────────────────── #
+        an_group = QGroupBox("ANALYSIS")
+        an_layout = QVBoxLayout(an_group)
+        an_layout.setSpacing(6)
+        
+        self._btn_ica = QPushButton("REALTIME ICA")
+        self._btn_ica.clicked.connect(self.ica_clicked.emit)
+        an_layout.addWidget(self._btn_ica)
+        
+        layout.addWidget(an_group)
 
         # ── Quick settings ────────────────────────────────────────────── #
         param_group = QGroupBox("PARAMETERS")

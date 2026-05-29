@@ -13,6 +13,7 @@ dependencies = [
     "nptdms>=1.9",
     "pandas>=2.2",
     "openpyxl>=3.1",
+    "scikit-learn>=1.8.0",
 ]
 
 [dependency-groups]

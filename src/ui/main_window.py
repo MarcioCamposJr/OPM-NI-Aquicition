@@ -33,6 +33,7 @@ from src.data.exporter import DataExporter
 from src.ui.chart_widget import ChartWidget
 from src.ui.control_panel import ControlPanel
 from src.ui.settings_dialog import SettingsDialog
+from src.ui.ica_window import IcaWindow
 
 logger = logging.getLogger(__name__)
 
@@ -64,6 +65,7 @@ class MainWindow(QMainWindow):
         self._processor: EcgProcessor | None = None
         self._recorder = TdmsRecorder()
         self._exporter = DataExporter()
+        self._ica_window: IcaWindow | None = None
 
         # Accumulator for export (keeps filtered data while acquiring).
         self._export_buffer: list[np.ndarray] = []
@@ -119,6 +121,7 @@ class MainWindow(QMainWindow):
         cp.save_toggled.connect(self._toggle_recording)
         cp.export_clicked.connect(self._export_data)
         cp.settings_clicked.connect(self._open_settings)
+        cp.ica_clicked.connect(self._open_ica)
         cp.sample_rate_changed.connect(self._on_sample_rate_changed)
         cp.window_seconds_changed.connect(self._on_window_changed)
 
@@ -184,8 +187,12 @@ class MainWindow(QMainWindow):
         # 3. Record if active
         if self._recorder.is_recording:
             self._recorder.write(filtered)
+            
+        # 4. Route to ICA if active
+        if self._ica_window is not None and self._ica_window.isVisible():
+            self._ica_window.add_data(filtered)
 
-        # 4. Accumulate for potential export
+        # 5. Accumulate for potential export
         self._export_buffer.append(filtered)
 
         # Limit buffer to ~60 seconds to avoid unbounded memory usage.
@@ -275,7 +282,18 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Export Error", str(exc))
             logger.exception("Export failed")
 
-    # ── Settings ──────────────────────────────────────────────────────── #
+    # ── Settings & Analysis ───────────────────────────────────────────── #
+
+    def _open_ica(self) -> None:
+        """Open the Real-Time ICA Window."""
+        if self._ica_window is None:
+            self._ica_window = IcaWindow(
+                sample_rate=self._daq_config.sample_rate,
+                active_physical_channels=self._daq_config.active_channels,
+            )
+        self._ica_window.show()
+        self._ica_window.raise_()
+        self._ica_window.activateWindow()
 
     def _open_settings(self) -> None:
         """Open the settings dialog."""

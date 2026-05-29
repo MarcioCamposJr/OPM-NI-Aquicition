@@ -133,27 +133,45 @@ class SettingsDialog(QDialog):
 
         # ── Active Channels Group ─────────────────────────────────────── #
         ch_group = QGroupBox("ACTIVE CHANNELS")
-        ch_layout = QGridLayout(ch_group)
-        ch_layout.setSpacing(8)
+        v_layout = QVBoxLayout(ch_group)
+        # PyQt6 ignora margens negativas e volta pro padrão. O mínimo é 0.
+        v_layout.setContentsMargins(10, 0, 10, 10)
+        v_layout.setSpacing(8)
         
         # Select All / None buttons
+        btn_row = QHBoxLayout()
+        btn_row.setContentsMargins(0, 0, 0, 0)
+        btn_row.setSpacing(10)
+        
         btn_all = QPushButton("ALL")
+        btn_all.setFixedHeight(22)
         btn_all.clicked.connect(lambda: self._set_all_channels(True))
+        
         btn_none = QPushButton("NONE")
+        btn_none.setFixedHeight(22)
         btn_none.clicked.connect(lambda: self._set_all_channels(False))
         
-        ch_layout.addWidget(btn_all, 0, 0, 1, 2)
-        ch_layout.addWidget(btn_none, 0, 2, 1, 2)
+        btn_row.addWidget(btn_all)
+        btn_row.addWidget(btn_none)
+        v_layout.addLayout(btn_row)
+        
+        # Aumenta a distância entre os botões e o grid
+        v_layout.addSpacing(15) 
+
+        # Checkboxes Grid
+        ch_layout = QGridLayout()
+        ch_layout.setSpacing(6)
 
         self._chk_channels: list[QCheckBox] = []
         for i in range(24):
             chk = QCheckBox(f"CH {i+1:02d}")
             chk.setChecked(i in cfg.active_channels)
             self._chk_channels.append(chk)
-            row = (i // 4) + 1
+            row = i // 4
             col = i % 4
             ch_layout.addWidget(chk, row, col)
 
+        v_layout.addLayout(ch_layout)
         layout.addRow(ch_group)
         self._tabs.addTab(page, "Hardware")
 

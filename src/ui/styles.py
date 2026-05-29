@@ -353,7 +353,7 @@ QGroupBox {{
     border-radius: {RADIUS_SM};
     margin-top: 14px;
     padding: 12px;
-    padding-top: 24px;
+    padding-top: 16px;
     font-weight: 600;
     font-size: {FONT_SIZE_SM};
 }}
